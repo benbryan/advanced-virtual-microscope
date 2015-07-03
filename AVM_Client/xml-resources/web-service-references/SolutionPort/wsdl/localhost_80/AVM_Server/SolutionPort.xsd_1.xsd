@@ -1,0 +1,305 @@
+<?xml version='1.0' encoding='UTF-8'?><!-- Published by JAX-WS RI (http://jax-ws.java.net). RI's version is Metro/2.3.1-b419 (branches/2.3.1.x-7937; 2014-08-04T08:11:03+0000) JAXWS-RI/2.2.10-b140803.1500 JAXWS-API/2.2.11 JAXB-RI/2.2.10-b140802.1033 JAXB-API/2.2.12-b140109.1041 svn-revision#unknown. --><xs:schema xmlns:tns="http://solution.server.sv.avl/" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0" targetNamespace="http://solution.server.sv.avl/">
+
+<xs:element name="cancelMonitor" type="tns:cancelMonitor"/>
+
+<xs:element name="cancelMonitorResponse" type="tns:cancelMonitorResponse"/>
+
+<xs:element name="clone" type="tns:clone"/>
+
+<xs:element name="cloneResponse" type="tns:cloneResponse"/>
+
+<xs:element name="create" type="tns:create"/>
+
+<xs:element name="createResponse" type="tns:createResponse"/>
+
+<xs:element name="delete" type="tns:delete"/>
+
+<xs:element name="deleteResponse" type="tns:deleteResponse"/>
+
+<xs:element name="generateInDatabase" type="tns:generateInDatabase"/>
+
+<xs:element name="generateInDatabaseResponse" type="tns:generateInDatabaseResponse"/>
+
+<xs:element name="get" type="tns:get"/>
+
+<xs:element name="getDescription" type="tns:getDescription"/>
+
+<xs:element name="getDescriptionResponse" type="tns:getDescriptionResponse"/>
+
+<xs:element name="getFeatures" type="tns:getFeatures"/>
+
+<xs:element name="getFeaturesResponse" type="tns:getFeaturesResponse"/>
+
+<xs:element name="getName" type="tns:getName"/>
+
+<xs:element name="getNameResponse" type="tns:getNameResponse"/>
+
+<xs:element name="getPermissions" type="tns:getPermissions"/>
+
+<xs:element name="getPermissionsResponse" type="tns:getPermissionsResponse"/>
+
+<xs:element name="getProgress" type="tns:getProgress"/>
+
+<xs:element name="getProgressResponse" type="tns:getProgressResponse"/>
+
+<xs:element name="getResponse" type="tns:getResponse"/>
+
+<xs:element name="getSolutionsList" type="tns:getSolutionsList"/>
+
+<xs:element name="getSolutionsListResponse" type="tns:getSolutionsListResponse"/>
+
+<xs:element name="getUsers" type="tns:getUsers"/>
+
+<xs:element name="getUsersResponse" type="tns:getUsersResponse"/>
+
+<xs:element name="set" type="tns:set"/>
+
+<xs:element name="setDescription" type="tns:setDescription"/>
+
+<xs:element name="setDescriptionResponse" type="tns:setDescriptionResponse"/>
+
+<xs:element name="setName" type="tns:setName"/>
+
+<xs:element name="setNameResponse" type="tns:setNameResponse"/>
+
+<xs:element name="setPermissions" type="tns:setPermissions"/>
+
+<xs:element name="setPermissionsResponse" type="tns:setPermissionsResponse"/>
+
+<xs:element name="setResponse" type="tns:setResponse"/>
+
+<xs:element name="trainClassifier" type="tns:trainClassifier"/>
+
+<xs:element name="trainClassifierResponse" type="tns:trainClassifierResponse"/>
+
+<xs:complexType name="trainClassifier">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="trainClassifierResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="setDescription">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+<xs:element name="description" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="setDescriptionResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="setPermissions">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+<xs:element name="username" type="xs:string" minOccurs="0"/>
+<xs:element name="permission" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="setPermissionsResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="delete">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="deleteResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getDescription">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getDescriptionResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getProgress">
+<xs:sequence>
+<xs:element name="progressMonitorID" type="xs:long"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getProgressResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="cancelMonitor">
+<xs:sequence>
+<xs:element name="progressMonitorID" type="xs:long"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="cancelMonitorResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getSolutionsList">
+<xs:sequence/>
+</xs:complexType>
+
+<xs:complexType name="getSolutionsListResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="setName">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+<xs:element name="name" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="setNameResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getName">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getNameResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="set">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+<xs:element name="xml" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="setResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="generateInDatabase">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+<xs:element name="ImageReferenceXML" type="xs:string" minOccurs="0"/>
+<xs:element name="tileDim" type="xs:int"/>
+<xs:element name="tileWindowDim" type="xs:int"/>
+<xs:element name="featureGeneratorClassName" type="xs:string" minOccurs="0"/>
+<xs:element name="featureNames" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="generateInDatabaseResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getPermissions">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+<xs:element name="targetUsername" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getPermissionsResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="clone">
+<xs:sequence>
+<xs:element name="id" type="xs:int"/>
+<xs:element name="cloneName" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="cloneResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="create">
+<xs:sequence>
+<xs:element name="name" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="createResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getFeatures">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+<xs:element name="ImageReferenceXML" type="xs:string" minOccurs="0"/>
+<xs:element name="tileDim" type="xs:int"/>
+<xs:element name="tileWindowDim" type="xs:int"/>
+<xs:element name="featureGeneratorClassName" type="xs:string" minOccurs="0"/>
+<xs:element name="featureNames" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getFeaturesResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getUsers">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getUsersResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="get">
+<xs:sequence>
+<xs:element name="ID" type="xs:int"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+</xs:schema>

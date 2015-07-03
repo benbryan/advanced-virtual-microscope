@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+        *** GENERATED FROM jax-ws.xml - DO NOT EDIT !                             ***
+        *** TO MODIFY wsimport options USE Web Service node -> Edit WS Attributes ***
+        *** TO CHANGE TARGETS GENERATED TO jaxws-build.xml COPY THOSE             ***
+        *** TARGETS TO ../build.xml AND MODIFY THAT FILE INSTEAD                  ***
+
+        --><project xmlns:xalan="http://xml.apache.org/xslt" xmlns:j2seproject3="http://www.netbeans.org/ns/j2se-project/3" xmlns:jaxws="http://www.netbeans.org/ns/jax-ws/1">
+    <!--
+                ===================
+                JAX-WS WSIMPORT SECTION
+                ===================
+            -->
+    <target name="wsimport-init" depends="init">
+        <mkdir dir="${build.generated.sources.dir}/jax-ws"/>
+        <taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport">
+            <classpath path="${libs.jaxws21.classpath}"/>
+        </taskdef>
+    </target>
+    <target name="wsimport-client-LoginPort" depends="wsimport-init">
+        <mkdir dir="${build.generated.dir}/jax-wsCache/LoginPort"/>
+        <property name="wsdl-LoginPort" location="xml-resources/web-service-references/LoginPort/wsdl/localhost_80/AVM_Server/LoginPort.wsdl"/>
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/LoginPort" destdir="${build.generated.dir}/jax-wsCache/LoginPort" wsdl="${wsdl-LoginPort}" catalog="catalog.xml" extension="true" verbose="true" fork="false" wsdlLocation="http://localhost:80/AVM_Server/LoginPort?wsdl" xnocompile="true" xendorsed="true">
+            <depends file="${wsdl-LoginPort}"/>
+            <produces dir="${build.generated.dir}/jax-wsCache/LoginPort"/>
+        </wsimport>
+        <copy todir="${build.generated.sources.dir}/jax-ws">
+            <fileset dir="${build.generated.dir}/jax-wsCache/LoginPort">
+                <include name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="wsimport-client-clean-LoginPort" depends="-init-project">
+        <delete dir="${build.generated.dir}/jax-wsCache/LoginPort"/>
+        <delete dir="${build.generated.sources.dir}/jax-ws/avl/sv/server"/>
+    </target>
+    <target name="wsimport-client-StudyPort" depends="wsimport-init">
+        <mkdir dir="${build.generated.dir}/jax-wsCache/StudyPort"/>
+        <property name="wsdl-StudyPort" location="xml-resources/web-service-references/StudyPort/wsdl/localhost_80/AVM_Server/StudyPort.wsdl"/>
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/StudyPort" destdir="${build.generated.dir}/jax-wsCache/StudyPort" wsdl="${wsdl-StudyPort}" catalog="catalog.xml" extension="true" verbose="true" fork="false" wsdlLocation="http://localhost:80/AVM_Server/StudyPort?wsdl" xnocompile="true" xendorsed="true">
+            <depends file="${wsdl-StudyPort}"/>
+            <produces dir="${build.generated.dir}/jax-wsCache/StudyPort"/>
+        </wsimport>
+        <copy todir="${build.generated.sources.dir}/jax-ws">
+            <fileset dir="${build.generated.dir}/jax-wsCache/StudyPort">
+                <include name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="wsimport-client-clean-StudyPort" depends="-init-project">
+        <delete dir="${build.generated.dir}/jax-wsCache/StudyPort"/>
+        <delete dir="${build.generated.sources.dir}/jax-ws/avl/sv/server/study"/>
+    </target>
+    <target name="wsimport-client-SolutionPort" depends="wsimport-init">
+        <mkdir dir="${build.generated.dir}/jax-wsCache/SolutionPort"/>
+        <property name="wsdl-SolutionPort" location="xml-resources/web-service-references/SolutionPort/wsdl/localhost_80/AVM_Server/SolutionPort.wsdl"/>
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/SolutionPort" destdir="${build.generated.dir}/jax-wsCache/SolutionPort" wsdl="${wsdl-SolutionPort}" catalog="catalog.xml" extension="true" verbose="true" fork="false" wsdlLocation="http://localhost:80/AVM_Server/SolutionPort?wsdl" xnocompile="true" xendorsed="true">
+            <depends file="${wsdl-SolutionPort}"/>
+            <produces dir="${build.generated.dir}/jax-wsCache/SolutionPort"/>
+        </wsimport>
+        <copy todir="${build.generated.sources.dir}/jax-ws">
+            <fileset dir="${build.generated.dir}/jax-wsCache/SolutionPort">
+                <include name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="wsimport-client-clean-SolutionPort" depends="-init-project">
+        <delete dir="${build.generated.dir}/jax-wsCache/SolutionPort"/>
+        <delete dir="${build.generated.sources.dir}/jax-ws/avl/sv/server/solution"/>
+    </target>
+    <target name="wsimport-client-Images" depends="wsimport-init">
+        <mkdir dir="${build.generated.dir}/jax-wsCache/Images"/>
+        <property name="wsdl-Images" location="xml-resources/web-service-references/Images/wsdl/localhost_80/AVM_Server/Images.wsdl"/>
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/Images" destdir="${build.generated.dir}/jax-wsCache/Images" wsdl="${wsdl-Images}" catalog="catalog.xml" extension="true" verbose="true" fork="false" wsdlLocation="http://localhost:80/AVM_Server/Images?wsdl" xnocompile="true" xendorsed="true">
+            <depends file="${wsdl-Images}"/>
+            <produces dir="${build.generated.dir}/jax-wsCache/Images"/>
+        </wsimport>
+        <copy todir="${build.generated.sources.dir}/jax-ws">
+            <fileset dir="${build.generated.dir}/jax-wsCache/Images">
+                <include name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="wsimport-client-clean-Images" depends="-init-project">
+        <delete dir="${build.generated.dir}/jax-wsCache/Images"/>
+        <delete dir="${build.generated.sources.dir}/jax-ws/avl/sv/server/images"/>
+    </target>
+    <target name="wsimport-client-ImagesSecure" depends="wsimport-init">
+        <mkdir dir="${build.generated.dir}/jax-wsCache/ImagesSecure"/>
+        <property name="wsdl-ImagesSecure" location="xml-resources/web-service-references/ImagesSecure/wsdl/localhost_80/AVM_Server/ImagesSecure.wsdl"/>
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/ImagesSecure" destdir="${build.generated.dir}/jax-wsCache/ImagesSecure" wsdl="${wsdl-ImagesSecure}" catalog="catalog.xml" extension="true" verbose="true" fork="false" wsdlLocation="http://localhost:80/AVM_Server/ImagesSecure?wsdl" xnocompile="true" xendorsed="true">
+            <depends file="${wsdl-ImagesSecure}"/>
+            <produces dir="${build.generated.dir}/jax-wsCache/ImagesSecure"/>
+        </wsimport>
+        <copy todir="${build.generated.sources.dir}/jax-ws">
+            <fileset dir="${build.generated.dir}/jax-wsCache/ImagesSecure">
+                <include name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="wsimport-client-clean-ImagesSecure" depends="-init-project">
+        <delete dir="${build.generated.dir}/jax-wsCache/ImagesSecure"/>
+        <delete dir="${build.generated.sources.dir}/jax-ws/avl/sv/server/images/secure"/>
+    </target>
+    <target name="wsimport-client-generate" depends="wsimport-client-LoginPort, wsimport-client-StudyPort, wsimport-client-SolutionPort, wsimport-client-Images, wsimport-client-ImagesSecure"/>
+</project>

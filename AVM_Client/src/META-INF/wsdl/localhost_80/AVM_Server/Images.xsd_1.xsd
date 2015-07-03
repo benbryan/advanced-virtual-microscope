@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='UTF-8'?><!-- Published by JAX-WS RI (http://jax-ws.java.net). RI's version is Metro/2.3.1-b419 (branches/2.3.1.x-7937; 2014-08-04T08:11:03+0000) JAXWS-RI/2.2.10-b140803.1500 JAXWS-API/2.2.11 JAXB-RI/2.2.10-b140802.1033 JAXB-API/2.2.12-b140109.1041 svn-revision#unknown. --><xs:schema xmlns:tns="http://images.server.sv.avl/" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0" targetNamespace="http://images.server.sv.avl/">
+
+<xs:element name="getImageInfo" type="tns:getImageInfo"/>
+
+<xs:element name="getImageInfoResponse" type="tns:getImageInfoResponse"/>
+
+<xs:element name="getImageSets" type="tns:getImageSets"/>
+
+<xs:element name="getImageSetsResponse" type="tns:getImageSetsResponse"/>
+
+<xs:element name="getJpegTables" type="tns:getJpegTables"/>
+
+<xs:element name="getJpegTablesResponse" type="tns:getJpegTablesResponse"/>
+
+<xs:element name="getTile" type="tns:getTile"/>
+
+<xs:element name="getTileResponse" type="tns:getTileResponse"/>
+
+<xs:element name="imagePostFinalize" type="tns:imagePostFinalize"/>
+
+<xs:element name="imagePostFinalizeResponse" type="tns:imagePostFinalizeResponse"/>
+
+<xs:element name="imagePostSetupDirectory" type="tns:imagePostSetupDirectory"/>
+
+<xs:element name="imagePostSetupDirectoryResponse" type="tns:imagePostSetupDirectoryResponse"/>
+
+<xs:element name="imagePostTile" type="tns:imagePostTile"/>
+
+<xs:element name="imagePostTileResponse" type="tns:imagePostTileResponse"/>
+
+<xs:complexType name="imagePostFinalize">
+<xs:sequence>
+<xs:element name="uploadToken" type="xs:string" minOccurs="0"/>
+<xs:element name="deleteImage" type="xs:boolean"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="imagePostFinalizeResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getJpegTables">
+<xs:sequence>
+<xs:element name="ImageReferenceXML" type="xs:string" minOccurs="0"/>
+<xs:element name="directoryIndex" type="xs:int"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getJpegTablesResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:base64Binary" nillable="true" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="imagePostSetupDirectory">
+<xs:sequence>
+<xs:element name="uploadToken" type="xs:string" minOccurs="0"/>
+<xs:element name="directoryIdx" type="xs:int"/>
+<xs:element name="propertiesXML" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="imagePostSetupDirectoryResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="imagePostTile">
+<xs:sequence>
+<xs:element name="uploadToken" type="xs:string" minOccurs="0"/>
+<xs:element name="directoryIdx" type="xs:int"/>
+<xs:element name="tileX" type="xs:int"/>
+<xs:element name="tileY" type="xs:int"/>
+<xs:element name="tile" type="xs:base64Binary" nillable="true" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="imagePostTileResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getImageInfo">
+<xs:sequence>
+<xs:element name="ImageReferenceXML" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getImageInfoResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getImageSets">
+<xs:sequence/>
+</xs:complexType>
+
+<xs:complexType name="getImageSetsResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getTile">
+<xs:sequence>
+<xs:element name="ImageReferenceXML" type="xs:string" minOccurs="0"/>
+<xs:element name="directoryIndex" type="xs:int"/>
+<xs:element name="tileX" type="xs:int"/>
+<xs:element name="tileY" type="xs:int"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getTileResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:base64Binary" nillable="true" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+</xs:schema>

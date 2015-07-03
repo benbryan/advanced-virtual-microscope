@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog" prefer="system">
+    <system systemId="http://localhost:80/AVM_Server/ImageSecure?wsdl" uri="xml-resources/web-service-references/ImageSecure/wsdl/localhost_80/AVM_Server/ImageSecure.wsdl"/>
+    <system systemId="http://localhost:80/AVM_Server/ImageSecure?xsd=1" uri="xml-resources/web-service-references/ImageSecure/wsdl/localhost_80/AVM_Server/ImageSecure.xsd_1.xsd"/>
+    <system systemId="http://localhost:80/AVM_Server/ImagesSecure?xsd=3" uri="xml-resources/web-service-references/ImagesSecure/wsdl/localhost_80/AVM_Server/ImagesSecure.xsd_3.xsd"/>
+    <system systemId="http://localhost:80/AVM_Server/ImagesSecure?xsd=2" uri="xml-resources/web-service-references/ImagesSecure/wsdl/localhost_80/AVM_Server/ImagesSecure.xsd_2.xsd"/>
+    <system systemId="http://localhost:80/AVM_Server/LoginPort?wsdl" uri="xml-resources/web-service-references/LoginPort/wsdl/localhost_80/AVM_Server/LoginPort.wsdl"/>
+    <system systemId="http://localhost:80/AVM_Server/LoginPort?xsd=1" uri="xml-resources/web-service-references/LoginPort/wsdl/localhost_80/AVM_Server/LoginPort.xsd_1.xsd"/>
+    <system systemId="http://localhost:80/AVM_Server/Images?wsdl" uri="xml-resources/web-service-references/Images/wsdl/localhost_80/AVM_Server/Images.wsdl"/>
+    <system systemId="http://localhost:80/AVM_Server/Images?xsd=1" uri="xml-resources/web-service-references/Images/wsdl/localhost_80/AVM_Server/Images.xsd_1.xsd"/>
+    <system systemId="http://localhost:80/AVM_Server/ImagesSecure?wsdl" uri="xml-resources/web-service-references/ImagesSecure/wsdl/localhost_80/AVM_Server/ImagesSecure.wsdl"/>
+    <system systemId="http://localhost:80/AVM_Server/ImagesSecure?xsd=1" uri="xml-resources/web-service-references/ImagesSecure/wsdl/localhost_80/AVM_Server/ImagesSecure.xsd_1.xsd"/>
+    <system systemId="http://localhost:80/AVM_Server/StudyPort?wsdl" uri="xml-resources/web-service-references/StudyPort/wsdl/localhost_80/AVM_Server/StudyPort.wsdl"/>
+    <system systemId="http://localhost:80/AVM_Server/StudyPort?xsd=1" uri="xml-resources/web-service-references/StudyPort/wsdl/localhost_80/AVM_Server/StudyPort.xsd_1.xsd"/>
+    <system systemId="http://localhost:80/AVM_Server/SolutionPort?wsdl" uri="xml-resources/web-service-references/SolutionPort/wsdl/localhost_80/AVM_Server/SolutionPort.wsdl"/>
+    <system systemId="http://localhost:80/AVM_Server/SolutionPort?xsd=1" uri="xml-resources/web-service-references/SolutionPort/wsdl/localhost_80/AVM_Server/SolutionPort.xsd_1.xsd"/>
+</catalog>

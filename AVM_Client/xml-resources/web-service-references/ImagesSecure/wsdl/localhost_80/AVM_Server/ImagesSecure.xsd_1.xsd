@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?><!-- Published by JAX-WS RI (http://jax-ws.java.net). RI's version is Metro/2.3.1-b419 (branches/2.3.1.x-7937; 2014-08-04T08:11:03+0000) JAXWS-RI/2.2.10-b140803.1500 JAXWS-API/2.2.11 JAXB-RI/2.2.10-b140802.1033 JAXB-API/2.2.12-b140109.1041 svn-revision#unknown. --><xs:schema xmlns:tns="http://secure.images.server.sv.avl/" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0" targetNamespace="http://secure.images.server.sv.avl/">
+
+<xs:element name="deleteImage" type="tns:deleteImage"/>
+
+<xs:element name="deleteImageResponse" type="tns:deleteImageResponse"/>
+
+<xs:element name="getDescription" type="tns:getDescription"/>
+
+<xs:element name="getDescriptionResponse" type="tns:getDescriptionResponse"/>
+
+<xs:element name="getOwnedSets" type="tns:getOwnedSets"/>
+
+<xs:element name="getOwnedSetsResponse" type="tns:getOwnedSetsResponse"/>
+
+<xs:element name="imagePostInit" type="tns:imagePostInit"/>
+
+<xs:element name="imagePostInitResponse" type="tns:imagePostInitResponse"/>
+
+<xs:element name="setImageDescription" type="tns:setImageDescription"/>
+
+<xs:element name="setImageDescriptionResponse" type="tns:setImageDescriptionResponse"/>
+
+<xs:complexType name="getDescription">
+<xs:sequence>
+<xs:element name="imageReferenceXML" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getDescriptionResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="deleteImage">
+<xs:sequence>
+<xs:element name="ImageReferenceXML" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="deleteImageResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="setImageDescription">
+<xs:sequence>
+<xs:element name="imageReferenceXML" type="xs:string" minOccurs="0"/>
+<xs:element name="description" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="setImageDescriptionResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getOwnedSets">
+<xs:sequence/>
+</xs:complexType>
+
+<xs:complexType name="getOwnedSetsResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="imagePostInit">
+<xs:sequence>
+<xs:element name="ImageReferenceXML" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="imagePostInitResponse">
+<xs:sequence>
+<xs:element name="return" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+</xs:schema>
