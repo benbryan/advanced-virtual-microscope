@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jax-ws xmlns="http://www.netbeans.org/ns/jax-ws/1">
+  <services>
+    <service name="LoginPort">
+      <implementation-class>avl.sv.server.LoginPort</implementation-class>
+    </service>
+    <service name="StudyPort">
+      <implementation-class>avl.sv.server.study.StudyPort</implementation-class>
+    </service>
+    <service name="SolutionPort">
+      <implementation-class>avl.sv.server.solution.SolutionPort</implementation-class>
+    </service>
+    <service name="Images">
+      <implementation-class>avl.sv.server.images.Images</implementation-class>
+    </service>
+    <service name="ImagesSecure">
+      <implementation-class>avl.sv.server.images.secure.ImagesSecure</implementation-class>
+    </service>
+  </services>
+  <clients/>
+</jax-ws>
