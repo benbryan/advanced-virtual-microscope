@@ -241,7 +241,7 @@ abstract public class StudySource extends AVM_Source {
         annoSetModels.clear();
     }
     
-    abstract public StudySource cloneStudy(String cloneName, String adminName);
+    abstract public StudySource cloneStudy(String cloneName);
 
     abstract public ImagesSource getImagesSource();
 

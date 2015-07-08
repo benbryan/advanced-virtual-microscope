@@ -534,7 +534,7 @@ public class StudySourceKVStore extends StudySource {
     }
 
     @Override
-    public StudySourceKVStore cloneStudy(String cloneName, String adminName) {
+    public StudySourceKVStore cloneStudy(String cloneName) {
         StudySourceKVStore clone = create(avmSession, cloneName);
         clone.copyStudyFrom(studyID);
         try {

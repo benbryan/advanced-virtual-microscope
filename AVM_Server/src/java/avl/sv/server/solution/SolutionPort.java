@@ -37,6 +37,7 @@ import javax.jws.WebService;
 import javax.swing.UIManager;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.ws.WebServiceContext;
+import weka.core.Instances;
 
 @WebService(serviceName = "SolutionPort")
 public class SolutionPort {
@@ -221,8 +222,12 @@ public class SolutionPort {
             Logger.getLogger(StudyPort.class.getName()).log(Level.WARNING, null, ex);
             return MessageStrings.PERMISSION_DENIED;
         }
-
-        if (!solutionSource.getPermissions(session.username).canModify()) {
+        try {
+            if (!solutionSource.getPermissions(session.username).canModify()) {
+                return MessageStrings.PERMISSION_DENIED;
+            }
+        } catch (PermissionDenied ex) {
+            Logger.getLogger(SolutionPort.class.getName()).log(Level.SEVERE, null, ex);
             return MessageStrings.PERMISSION_DENIED;
         }
         final long pmID = random.nextLong();
@@ -246,7 +251,7 @@ public class SolutionPort {
             pm.setProgress(3);
             pm.setNote("Generating Features");
             try {
-                ArrayList<SampleSetClass> samplesSets;
+                Instances instances;
 
                 ArrayList<String> featureNames = new ArrayList<>();
                 for (AbstractFeatureGenerator generator : solutionHold.getFeatureGenerators()) {
@@ -259,7 +264,7 @@ public class SolutionPort {
                 classNames.addAll(solutionHold.getClassifierClassNames().values());
 
                 try {
-                    samplesSets = SampleSetClass.generateTrainingSets(imageSources, solutionSource, pm);
+                    instances = SampleSetClass.generateInstances(imageSources, solutionSource, pm);
                 } catch (OutOfMemoryError ex) {
                     Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
                     pm.setNote("error: Java heap space out of menory");
@@ -272,7 +277,7 @@ public class SolutionPort {
                     return;
                 }
 
-                if (samplesSets == null) {
+                if (instances == null) {
                     if (!pm.isCanceled()) {
                         pm.setNote("Classifier generation canceled");
                         pm.close();
@@ -280,15 +285,22 @@ public class SolutionPort {
                 }
 
                 // Check if there are samples in each set
-                for (SampleSetClass sampleSet : samplesSets) {
-                    if (sampleSet.samples.size() < 10) {
+                long count[] = new long[instances.numClasses()];
+                for (int i = 0; i < count.length; i++){
+                    count[i] = 0;
+                }
+                for (int i =0; i < instances.numInstances(); i++){
+                    count[(int)instances.instance(i).classValue()]++;
+                }
+                for (int i = 0; i < count.length; i++){
+                    if (count[i] < 10) {
                         pm.setNote("error: Not enough samples collected");
                         pm.close();
                         return;
                     }
                 }
                 pm.setNote("Training classifier(s)");
-                solutionHold.trainClassifiers(samplesSets);
+                solutionHold.trainClassifiers(instances);
                 solutionSource.setSolution(solutionHold);
                 pm.setNote("Classifier trained, downloading now");
                 pm.close();
@@ -333,9 +345,7 @@ public class SolutionPort {
     public String getPermissions(@WebParam(name = "ID") final int id,
             @WebParam(name = "targetUsername") String targetUsername) {
         AVM_Session session = getSession();
-        if (session == null) {
-            return MessageStrings.SESSION_EXPIRED;
-        }
+        if (session == null) { return MessageStrings.SESSION_EXPIRED; }
         SolutionSourceKVStore solutionSource;
         try {
             solutionSource = SolutionSourceKVStore.get(session, id);
@@ -343,12 +353,13 @@ public class SolutionPort {
             Logger.getLogger(StudyPort.class.getName()).log(Level.WARNING, null, ex);
             return MessageStrings.PERMISSION_DENIED;
         }
-        if ((targetUsername == null) || targetUsername.isEmpty()) {
+        if ((targetUsername == null) || targetUsername.isEmpty() || session.username.equals(targetUsername.toLowerCase())) {
             return solutionSource.getPermissions().name();
         }
-        if (solutionSource.getPermissions().isAdmin()) {
+        try {
             return solutionSource.getPermissions(targetUsername).name();
-        } else {
+        } catch (PermissionDenied ex) {
+            Logger.getLogger(StudyPort.class.getName()).log(Level.WARNING, null, ex);
             return MessageStrings.PERMISSION_DENIED;
         }
     }
@@ -457,33 +468,26 @@ public class SolutionPort {
     }
 
     @WebMethod(operationName = "clone")
-    public String clone(@WebParam(name = "id") final int id, @WebParam(name = "cloneName") final String cloneName) {
+    public String clone( @WebParam(name = "id") final int id, 
+                         @WebParam(name = "cloneName") final String cloneName) {
         AVM_Session session = getSession();
-        if (session == null) {
-            return MessageStrings.SESSION_EXPIRED;
-        }
+        if (session == null) { return MessageStrings.SESSION_EXPIRED; }
         SolutionSourceKVStore solutionSourceOriginal;
         try {
             solutionSourceOriginal = SolutionSourceKVStore.get(session, id);
+            if (solutionSourceOriginal == null){ return MessageStrings.PERMISSION_DENIED;  } 
         } catch (PermissionDenied ex) {
             Logger.getLogger(StudyPort.class.getName()).log(Level.WARNING, null, ex);
             return MessageStrings.PERMISSION_DENIED;
         }
-        if (solutionSourceOriginal.getPermissions(session.username).canRead()) {
-            Executors.newSingleThreadExecutor().submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        solutionSourceOriginal.cloneSolution(cloneName);
-                    } catch (PermissionDenied ex) {
-                        Logger.getLogger(SolutionPort.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-            return String.valueOf(id);
-        } else {
+        SolutionSourceKVStore clonedStudy;
+        try {
+            clonedStudy = solutionSourceOriginal.cloneSolution(cloneName);
+        } catch (PermissionDenied ex) {
+            Logger.getLogger(SolutionPort.class.getName()).log(Level.SEVERE, null, ex);
             return MessageStrings.PERMISSION_DENIED;
         }
+        return String.valueOf(clonedStudy.solutionId);   
     }
 
     @WebMethod(operationName = "getProgress")

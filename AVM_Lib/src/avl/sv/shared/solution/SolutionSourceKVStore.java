@@ -11,6 +11,7 @@ import avl.sv.shared.solution.xml.SolutionXML_Parser;
 import avl.sv.shared.solution.xml.SolutionXML_Writer;
 import avl.sv.shared.study.StudySource;
 import avl.sv.shared.study.StudySourceKVStore;
+import static avl.sv.shared.study.StudySourceKVStore.getPermissionsSets;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -39,11 +40,11 @@ import org.xml.sax.SAXException;
 
 public class SolutionSourceKVStore extends SolutionSource {
 
-    private final AVM_Session session;    
+    private final AVM_Session avmSession;    
     
     private SolutionSourceKVStore(AVM_Session session, int id) {
         super(id);
-        this.session = session;
+        this.avmSession = session;
     }
         
     public static SolutionSourceKVStore get(AVM_Session session, int id) throws PermissionDenied{
@@ -64,13 +65,22 @@ public class SolutionSourceKVStore extends SolutionSource {
         ss.setName(solutionName);
         return ss;
     }
-        
+            
     @Override
-    public Permissions getPermissions(String targetUsername){
-        targetUsername = targetUsername.toLowerCase();
-        ArrayList<PermissionsSet> pSets = getPermissionsSets(targetUsername);
-        for (PermissionsSet pSet:pSets){
-            if (pSet.getID() == solutionId){
+    public Permissions getPermissions(String userName) throws PermissionDenied {
+        userName = userName.toLowerCase();
+        if (userName == null || userName.isEmpty()) {
+            return getPermissions();
+        }
+        if (userName.equals(avmSession.username)) {
+            return getPermissions();
+        }
+        if (!getPermissions().isAdmin()) {
+            throw new PermissionDenied();
+        }
+        ArrayList<PermissionsSet> pSets = getPermissionsSets(userName);
+        for (PermissionsSet pSet : pSets) {
+            if (pSet.getID() == solutionId) {
                 return pSet.getPermission();
             }
         }
@@ -101,12 +111,12 @@ public class SolutionSourceKVStore extends SolutionSource {
                 break;
             }
         }
-        if (entryUpdated == false){
+        if ((entryUpdated == false) && (!permission.equals(Permissions.DENIED))){
             permissionSets.add(newSet);                
         }
         setPermissionsSets( targetUsername, permissionSets);
         updateUserList(targetUsername, permission);
-        StudySourceKVStore.get(session, solutionId).setPermission(targetUsername, permission);
+        StudySourceKVStore.get(avmSession, solutionId).setPermission(targetUsername, permission);
     }
             
     public static ArrayList<PermissionsSet> getPermissionsSets(final String targetUsername) {
@@ -219,8 +229,8 @@ public class SolutionSourceKVStore extends SolutionSource {
         major.add("solution");
         major.add(String.valueOf(solutionId));
         KVStoreRef.getRef().put(Key.createKey(major), Value.createValue(xml.getBytes()));
-        SolutionChangeEvent solutionChagngeEvent = new SolutionChangeEvent(solutionId, SolutionChangeEvent.Type.Full, session.username, xml);
-        SolutionChangeLoggerKVStoreManager.addChangeEvent(solutionChagngeEvent, session.sessionID);
+        SolutionChangeEvent solutionChagngeEvent = new SolutionChangeEvent(solutionId, SolutionChangeEvent.Type.Full, avmSession.username, xml);
+        SolutionChangeLoggerKVStoreManager.addChangeEvent(solutionChagngeEvent, avmSession.sessionID);
         return MessageStrings.SUCCESS;
     }
 
@@ -229,7 +239,7 @@ public class SolutionSourceKVStore extends SolutionSource {
         major.add("solution");
         major.add(String.valueOf(solutionId));
         ValueVersion value = KVStoreRef.getRef().get(Key.createKey(major));
-        if ((value == null) || (value.getValue() == null)) {
+        if ((value == null) || (value.getValue() == null) || value.getValue().getValue().length == 0) {
             return SolutionXML_Writer.getXMLString(new Solution(getName()));
         }
         String xml = new String(value.getValue().getValue());
@@ -260,7 +270,7 @@ public class SolutionSourceKVStore extends SolutionSource {
             throw new PermissionDenied();
         }
         removeAllSolutionChangeListeners();
-        setPermissions(session.username, Permissions.DENIED);
+        setPermissions(avmSession.username, Permissions.DENIED);
         if (getUserList().length() < 2){
             ArrayList<String> major = new ArrayList<>();
             major.add("solution");
@@ -287,8 +297,8 @@ public class SolutionSourceKVStore extends SolutionSource {
         minor.add("description");       
         Key key = Key.createKey(major, minor);
         KVStoreRef.getRef().put(key, Value.createValue(description.getBytes()));
-        SolutionChangeEvent solutionChagngeEvent = new SolutionChangeEvent(solutionId, SolutionChangeEvent.Type.Description, session.username, description);
-        SolutionChangeLoggerKVStoreManager.addChangeEvent(solutionChagngeEvent, session.sessionID);
+        SolutionChangeEvent solutionChagngeEvent = new SolutionChangeEvent(solutionId, SolutionChangeEvent.Type.Description, avmSession.username, description);
+        SolutionChangeLoggerKVStoreManager.addChangeEvent(solutionChagngeEvent, avmSession.sessionID);
         return description;
     }
 
@@ -312,7 +322,7 @@ public class SolutionSourceKVStore extends SolutionSource {
     @Override
     public StudySource getStudySource() {
         try {
-            return StudySourceKVStore.get(session, solutionId);
+            return StudySourceKVStore.get(avmSession, solutionId);
         } catch (PermissionDenied ex) {
             Logger.getLogger(SolutionSourceKVStore.class.getName()).log(Level.SEVERE, null, ex);
             return null;
@@ -418,7 +428,6 @@ public class SolutionSourceKVStore extends SolutionSource {
         }
 
         byte samplesAsBytes[] = bos.toByteArray();
-        
         KVStore kvStore = KVStoreRef.getRef();
         ArrayList<String> major = new ArrayList<>();
         major.add("image");
@@ -438,9 +447,9 @@ public class SolutionSourceKVStore extends SolutionSource {
     }
 
     @Override
-    public SolutionSource cloneSolution(String cloneName) throws PermissionDenied {
+    public SolutionSourceKVStore cloneSolution(String cloneName) throws PermissionDenied {
         SolutionSourceKVStore clone;
-        clone = SolutionSourceKVStore.create(session, cloneName);
+        clone = SolutionSourceKVStore.create(avmSession, cloneName);
         KVStore kv = KVStoreRef.getRef();
         ArrayList<String> major = new ArrayList<>();
         major.add("solution");
@@ -459,7 +468,7 @@ public class SolutionSourceKVStore extends SolutionSource {
         
         StudySourceKVStore ssClone;
         try {
-            ssClone = StudySourceKVStore.get(session, clone.solutionId);
+            ssClone = StudySourceKVStore.get(avmSession, clone.solutionId);
         } catch (PermissionDenied ex) {
             Logger.getLogger(SolutionSourceKVStore.class.getName()).log(Level.SEVERE, null, ex);
             return null;
@@ -471,7 +480,13 @@ public class SolutionSourceKVStore extends SolutionSource {
 
     @Override
     public Permissions getPermissions() {
-        return Permissions.ADMIN;
+        ArrayList<PermissionsSet> pSets = getPermissionsSets(avmSession.username);
+        for (PermissionsSet pSet : pSets) {
+            if (pSet.getID() == solutionId) {
+                return pSet.getPermission();
+            }
+        }
+        return Permissions.DENIED;
     }
 
     @Override
@@ -492,7 +507,7 @@ public class SolutionSourceKVStore extends SolutionSource {
         if (!getPermissions().canRead()){
             return;
         }
-        SolutionChangeLoggerKVStoreManager.addChangeLogger(solutionId, session, listener);
+        SolutionChangeLoggerKVStoreManager.addChangeLogger(solutionId, avmSession, listener);
     }
 
     @Override
@@ -502,7 +517,7 @@ public class SolutionSourceKVStore extends SolutionSource {
 
     @Override
     public void removeAllSolutionChangeListeners() {
-        SolutionChangeLoggerKVStoreManager.removeAllListeners(solutionId, session);
+        SolutionChangeLoggerKVStoreManager.removeAllListeners(solutionId, avmSession);
     }
 
     @Override
@@ -520,7 +535,11 @@ public class SolutionSourceKVStore extends SolutionSource {
             ArrayList<String> minor = new ArrayList<>();
             minor.add("name");
             ValueVersion temp = KVStoreRef.getRef().get(Key.createKey(major, minor));
-            name = new String(temp.getValue().getValue());
+            if ((temp == null) || (temp.getValue() == null) || (temp.getValue().getValue() == null)){
+                name = "Failed to get name"; 
+            } else {
+                name = new String(temp.getValue().getValue());
+            }
         }
         return name;
     }

@@ -30,26 +30,6 @@ public class SolutionsSourceKVStore extends SolutionsSource{
     }
 
     @Override
-    public String getPermissions(int id, String targetUsername) {
-        SolutionSourceKVStore ss;
-        try {
-            ss = SolutionSourceKVStore.get(session, id);
-        } catch (PermissionDenied ex) {
-            Logger.getLogger(SolutionsSourceKVStore.class.getName()).log(Level.SEVERE, null, ex);
-            return MessageStrings.PERMISSION_DENIED;
-        }
-        if ((targetUsername == null) || (targetUsername.isEmpty())) {
-            targetUsername = session.username;
-        }
-        if (ss.getPermissions(session.username).canRead()){
-            Permissions p = ss.getPermissions(targetUsername);
-            return p.name();
-        } else {
-            return MessageStrings.PERMISSION_DENIED;
-        }
-    }
-
-    @Override
     public SolutionSource getSolutionSource(int id) throws PermissionDenied {
         return SolutionSourceKVStore.get(session, id);
     }

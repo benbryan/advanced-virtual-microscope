@@ -11,8 +11,6 @@ abstract public class SolutionsSource {
 
     abstract public String getDescription(int id);
 
-    abstract public String getPermissions(int id, String targetUsername) throws PermissionDenied;
-
     abstract public SolutionSource getSolutionSource(int id) throws PermissionDenied;
 
     abstract public String getSolutionsList();

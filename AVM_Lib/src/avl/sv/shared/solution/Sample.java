@@ -21,6 +21,7 @@ public class Sample {
      */
     public Rectangle window;
     public double classifierLabel;
+    public double distribution[];
     public BufferedImage img;
 
     /**

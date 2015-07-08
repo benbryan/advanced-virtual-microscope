@@ -26,7 +26,7 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
 
-public class ClassifierWeka implements ClassifierInterface{
+public class ClassifierWeka {
 
     private boolean active = false; 
     private Date lastTrained = null;
@@ -42,47 +42,32 @@ public class ClassifierWeka implements ClassifierInterface{
         this.classifier = classifierWeka;
     }   
     
-    @Override
     public boolean isActive() {
         return active;
     }
 
-    @Override
     public void setActive(boolean isActive) {
         this.active = isActive;
     }
 
-    @Override
     public String getMessage() {
         return message;
     }
 
-    @Override
     public Date getLastTrained() {
         return lastTrained;
     }
 
-    @Override
     public String getName() {
         return "Weka";
     }
         
-    @Override
-    public void train(ArrayList<SampleSetClass> samplesSets) {
-        if (samplesSets.isEmpty() || samplesSets.get(0).samples.isEmpty()){
+    public void train(Instances instances) {
+        if ((instances.numClasses() < 2) || (instances.numAttributes() < 2)){
             valid = false;
             return;
         }
         try {
-            ArrayList<String> classNames = new ArrayList<>();
-            for (int i = 0; i < samplesSets.size(); i++){
-                String name = samplesSets.get(i).className;
-                classNames.add(name);
-            }
-            
-            ArrayList<String> featureNames = samplesSets.get(0).featureNames;
-            Instances instances = SamplesToInstances.convert(classNames, featureNames, samplesSets);
-            
             classifier.buildClassifier(instances);
             
             // try one just to see if the classifierWeka works
@@ -130,18 +115,16 @@ public class ClassifierWeka implements ClassifierInterface{
 //        for (SampleSetClass sampleSet:sampleSets){
 //            testSamples.addAll(sampleSet.samples);
 //        }
-//        classifierRandomForest.predict(testSamples);
+//        classifierRandomForest.classify(testSamples);
 //        int i = 0;
 //        
 //    }
     
-    @Override
     public boolean isValid() {
         return valid;
     }
 
-    @Override
-    public void predict(ArrayList<Sample> samples) {
+    public void classify(ArrayList<Sample> samples) {
         if (samples.isEmpty()){
             return;
         }
@@ -164,6 +147,32 @@ public class ClassifierWeka implements ClassifierInterface{
         }
     }
     
+    public void distribution(ArrayList<Sample> samples, int numelClasses) {
+        if (samples.isEmpty()){
+            return;
+        }
+        int numelFeatures = samples.get(0).featureVector.length;      
+        Instances instances = getDummyDataset(numelFeatures);
+
+        for (Sample sample:samples){
+            Instance instance = new Instance(numelFeatures);
+            for (int i = 0; i < sample.featureVector.length; i++){
+                instance.setValue(instances.attribute(i), sample.featureVector[i]);
+            }
+            instance.setDataset(instances);
+            double dist[] = null;
+            try {
+                dist = classifier.distributionForInstance(instance);
+                double temp[] = new double[numelClasses];
+                System.arraycopy(dist, 0, temp, 0, numelClasses);
+                dist = temp;
+            } catch (Exception ex) {
+                Logger.getLogger(ClassifierWeka.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            sample.distribution = dist;
+        }
+    }
+    
     private Instances getDummyDataset(int numelFeatures){
         // Weka expects a dataset defining the features and class names. However it does not seem to use them so I just gave it something.
         FastVector attributes = new FastVector();
@@ -181,18 +190,15 @@ public class ClassifierWeka implements ClassifierInterface{
         return instances;
     }
 
-    @Override
     public JPanel getOptionsPanel() {
         OptionsPropmptWeka optionsPrompt = new OptionsPropmptWeka(classifier);
         return optionsPrompt;
     }
 
-    @Override
     public void invalidate() {
         valid = false;
     }
 
-    @Override
     public Element getProperties(Document doc) {
         Element propertiesNode = doc.createElement("Properties");
         propertiesNode.setAttribute("Active", String.valueOf(active));
@@ -216,7 +222,6 @@ public class ClassifierWeka implements ClassifierInterface{
         return propertiesNode;        
     }
 
-    @Override
     public void setProperties(Node element) {
         for (Node n = element.getFirstChild(); n != null; n = n.getNextSibling()) {
             if ("Properties".equalsIgnoreCase(n.getNodeName())) {
@@ -297,6 +302,10 @@ public class ClassifierWeka implements ClassifierInterface{
 
     public Classifier getClassifier() {
         return classifier;
+    }
+
+    public void setValid(boolean b) {
+        this.valid = b;
     }
     
 }

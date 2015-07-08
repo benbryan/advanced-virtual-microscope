@@ -43,13 +43,13 @@ public class ImageManagerSet extends AVM_Source implements Serializable   {
         if (children == null){
             return new ArrayList<>();
         }
-        ArrayList<ImageManager> imageManager = new ArrayList<>();       
+        ArrayList<ImageManager> imageManagers = new ArrayList<>();       
         for (Object r : children) {
             if (r instanceof ImageManager) {
-                imageManager.add((ImageManager) r);
+                imageManagers.add((ImageManager) r);
             }
         }
-        return imageManager;
+        return imageManagers;
     }
 
     @Override

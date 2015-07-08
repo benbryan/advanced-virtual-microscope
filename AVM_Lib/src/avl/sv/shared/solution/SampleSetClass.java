@@ -1,7 +1,6 @@
 package avl.sv.shared.solution;
 
 import avl.sv.shared.AVM_ProgressMonitor;
-import avl.sv.shared.image.ImageManager;
 import avl.sv.shared.image.ImageSource;
 import avl.sv.shared.study.AnnotationSet;
 import avl.sv.shared.model.featureGenerator.AbstractFeatureGenerator;
@@ -12,6 +11,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import weka.core.Attribute;
+import weka.core.FastVector;
+import weka.core.Instance;
+import weka.core.Instances;
 
 public class SampleSetClass {
     public final String className;
@@ -23,22 +26,50 @@ public class SampleSetClass {
         samples = new ArrayList<>();
         this.featureNames = featureNames;
     }   
-          
-    public static ArrayList<SampleSetClass> generateTrainingSets(ArrayList<ImageSource> imageSources, SolutionSource solutionSource, AVM_ProgressMonitor pm) throws Throwable {
+             
+    public static Instances convert(ArrayList<String> classNames, ArrayList<String> featureNames, ArrayList<SampleSetClass> samplesSets){
+        Instances instances = initInstances(classNames, featureNames);
+        for (SampleSetClass samplesSet : samplesSets) {
+            for (Sample sample : samplesSet.samples) {
+                Instance instance = new Instance(featureNames.size() + 1);
+                for (int i = 0; i < sample.featureVector.length; i++) {
+                    instance.setValue((Attribute) instances.attribute(i), sample.featureVector[i]);
+                }
+                instance.setValue((Attribute) instances.classAttribute(), samplesSet.className);
+                instances.add(instance);
+            }
+        }
+        return instances;
+    }
+    
+    private static Instances initInstances(Collection<String> classNames, ArrayList<String> featureNames) {
+        FastVector attributes = new FastVector();
+        for (String name : featureNames) {
+            attributes.addElement(new Attribute(name));
+        }
+        FastVector classAttr = new FastVector(2);
+        for (String className : classNames) {
+            classAttr.addElement(className);
+        }
+        attributes.addElement(new Attribute("class", classAttr));
+        int classIdx = featureNames.size();
+        Instances instances = new Instances("test", attributes, classIdx);
+        instances.setClassIndex(classIdx);
+        return instances;
+    }
+    
+    public static Instances generateInstances(ArrayList<ImageSource> imageSources, SolutionSource solutionSource, AVM_ProgressMonitor pm) throws Throwable {
         Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
         Solution solution = solutionSource.getSolution();
         StudySource study = solutionSource.getStudySource();       
         Collection<String> classNames = solution.getClassifierClassNames().values();
-        HashMap<String,SampleSetClass> sampleSetMap = new HashMap<>();
         
         ArrayList<String> featureNames = new ArrayList<>();
         for (AbstractFeatureGenerator featureGenerator:solutionSource.getSolution().getFeatureGenerators()){
             featureNames.addAll(Arrays.asList(featureGenerator.getFeatureNames()));
         }
-        
-        for (String className:classNames){
-            sampleSetMap.put(className, new SampleSetClass(className, featureNames));
-        }
+                
+        Instances instances = initInstances(classNames, featureNames);
         
         if (pm != null){
             pm.setNote("Counting samples to collect");
@@ -62,7 +93,7 @@ public class SampleSetClass {
             pm.setMaximum(samplesToCollect*2);
         }
         
-        for (ImageSource imageSource : imageSources) {
+        for (ImageSource imageSource: imageSources) {
             if (pm != null){
                 pm.setNote(imageSource.imageReference.imageSetName +"\\"+ imageSource.imageReference.imageName);
             }            
@@ -85,16 +116,19 @@ public class SampleSetClass {
                         return null;
                     }
                 }
-                sampleSetMap.get(folderName).samples.addAll(samplesSet.samples);
+                
+                for (Sample sample : samplesSet.samples) {
+                    Instance instance = new Instance(featureNames.size() + 1);
+                    for (int i = 0; i < sample.featureVector.length; i++) {
+                        instance.setValue((Attribute) instances.attribute(i), sample.featureVector[i]);
+                    }
+                    instance.setValue((Attribute) instances.classAttribute(), folderName);
+                    instances.add(instance);
+                }
             }
         }
-        ArrayList<SampleSetClass> samplesSets = new ArrayList<>();
-        Iterator<String> iter = classNames.iterator();
-        while (iter.hasNext()){
-            samplesSets.add(sampleSetMap.get(iter.next()));
-        }
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
-        return samplesSets;
+        return instances;
     }
 
     public static int numelSamples(ArrayList<ImageSource> imageSources, SolutionSource solutionSource) {
@@ -118,5 +152,4 @@ public class SampleSetClass {
         return count;
     }
    
-    
 }

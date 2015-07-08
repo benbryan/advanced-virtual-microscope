@@ -154,21 +154,21 @@ public class StudyPort {
 
     @WebMethod(operationName = "getPermissions")
     public String getPermissions(@WebParam(name = "id") final int id,
-            @WebParam(name = "targerUsername") String targerUsername) {
+            @WebParam(name = "targerUsername") String targetUsername) {
         AVM_Session session = getSession();
         if (session == null) { return MessageStrings.SESSION_EXPIRED; }
-        StudySource studySource;
+        StudySourceKVStore studySource;
         try {
             studySource = StudySourceKVStore.get(session, id);
         } catch (PermissionDenied ex) {
             Logger.getLogger(StudyPort.class.getName()).log(Level.WARNING, null, ex);
             return MessageStrings.PERMISSION_DENIED;
         }
-        if ((targerUsername == null) || (targerUsername.isEmpty())) {
+        if ((targetUsername == null) || targetUsername.isEmpty() || session.username.equals(targetUsername.toLowerCase())) {
             return studySource.getPermissions().name();
         }
         try {
-            return studySource.getPermissions(targerUsername).name();
+            return studySource.getPermissions(targetUsername).name();
         } catch (PermissionDenied ex) {
             Logger.getLogger(StudyPort.class.getName()).log(Level.WARNING, null, ex);
             return MessageStrings.PERMISSION_DENIED;
@@ -207,7 +207,7 @@ public class StudyPort {
                               @WebParam(name = "cloneName") final String cloneName) {
         AVM_Session session = getSession();
         if (session == null) { return MessageStrings.SESSION_EXPIRED; }
-        StudySource originalStudy;
+        StudySourceKVStore originalStudy;
         try {
             originalStudy = StudySourceKVStore.get(session, id);
             if (originalStudy == null){ return MessageStrings.PERMISSION_DENIED;  } 
@@ -215,7 +215,22 @@ public class StudyPort {
             Logger.getLogger(StudyPort.class.getName()).log(Level.WARNING, null, ex);
             return MessageStrings.PERMISSION_DENIED;
         }
-        StudySource clonedStudy = originalStudy.cloneStudy(cloneName, session.username);
+        StudySource clonedStudy = originalStudy.cloneStudy(cloneName);
         return String.valueOf(clonedStudy.studyID);    
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

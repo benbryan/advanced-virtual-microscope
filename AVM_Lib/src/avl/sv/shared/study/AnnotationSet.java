@@ -100,9 +100,6 @@ public class AnnotationSet extends DefaultMutableTreeTableNode implements Serial
     synchronized public void remove(MutableTreeTableNode child, boolean direct) {
         if (child instanceof ROI_Folder) {
             ROI_Folder folder = (ROI_Folder) child;
-            if (folder.toString().equals(MessageStrings.Temporary)) {
-                direct = true;
-            }
             if (direct) {
                 folder.removeListener(folderListener);
                 super.remove(child);
@@ -118,21 +115,7 @@ public class AnnotationSet extends DefaultMutableTreeTableNode implements Serial
     synchronized public void remove(MutableTreeTableNode child) {
         remove(child, true);
     }
-
-    synchronized public void replace(ROI_Folder oldFolder, ROI_Folder newFolder, boolean direct) {
-        for (MutableTreeTableNode child : children) {
-            if (child instanceof ROI_Folder) {
-                ROI_Folder folder = (ROI_Folder) child;
-                if (folder.id == oldFolder.id) {
-                    int index = getIndex(folder);
-                    remove(folder,direct);
-                    insert(newFolder, index, direct);
-                    break;
-                }
-            }
-        }        
-    }
-    
+   
     @Override
     synchronized public void insert(MutableTreeTableNode child, int index) {
         insert(child, index, true); //To change body of generated methods, choose Tools | Templates.
@@ -143,9 +126,6 @@ public class AnnotationSet extends DefaultMutableTreeTableNode implements Serial
         if (child instanceof ROI_Folder) {
             final AnnotationSet annoSet = this;
             ROI_Folder folder = (ROI_Folder) child;
-            if (child.toString().equals(MessageStrings.Temporary)) {
-                direct = true;
-            }
             if (direct) {
                 super.insert(folder, index);
                 folder.addListener(folderListener);

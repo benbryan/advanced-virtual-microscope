@@ -1,6 +1,6 @@
 package avl.sv.shared.solution.xml;
 
-import avl.sv.shared.model.classifier.ClassifierInterface;
+import avl.sv.shared.model.classifier.ClassifierWeka;
 import avl.sv.shared.model.featureGenerator.AbstractFeatureGenerator;
 import avl.sv.shared.solution.Solution;
 import java.io.ByteArrayOutputStream;
@@ -31,7 +31,7 @@ public class SolutionXML_Writer {
             }
             doc.appendChild(rootElement);
 
-            for (ClassifierInterface classifier : solution.getClassifiers()) {
+            for (ClassifierWeka classifier : solution.getClassifiers()) {
                 Element classifierElement = doc.createElement("Classifier");
                 classifierElement.setAttribute("Class", classifier.getClass().getCanonicalName());
                 classifierElement.appendChild(classifier.getProperties(doc));

@@ -49,14 +49,23 @@ public class SolutionPortChangeMonitor {
             Logger.getLogger(SolutionPortChangeMonitor.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
-        if (solutionSource == null){return;}
-        if (!solutionSource.getPermissions(avmSession.username).canRead()){
+        if (solutionSource == null) {
             return;
         }
-        SolutionChangeListener listener = (SolutionChangeEvent event) -> {
-            session.getAsyncRemote().sendObject(event);
+        if (!solutionSource.getPermissions().canRead()) {
+            return;
+        }
+        SolutionChangeListener listener = new SolutionChangeListener() {
+            @Override
+            public void solutionChanged(SolutionChangeEvent event) {
+                if (!session.isOpen()) {
+                    SolutionPortChangeMonitorSessionManager.removeListener(session, this);
+                    return;
+                }
+                session.getAsyncRemote().sendObject(event);
+            }
         };
-        if (isRemove){
+        if (isRemove) {
             solutionSource.removeSolutionChangeListener(listener);
             SolutionPortChangeMonitorSessionManager.removeListener(session, listener);
         } else {

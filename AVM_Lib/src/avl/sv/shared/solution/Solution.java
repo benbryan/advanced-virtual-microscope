@@ -1,6 +1,6 @@
 package avl.sv.shared.solution;
 
-import avl.sv.shared.model.classifier.ClassifierInterface;
+import avl.sv.shared.model.classifier.ClassifierWeka;
 import avl.sv.shared.model.featureGenerator.AbstractFeatureGenerator;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -10,9 +10,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
+import weka.core.Instances;
 
 public class Solution extends DefaultMutableTreeTableNode implements Serializable  {
-    private final ArrayList<ClassifierInterface> classifiers = new ArrayList<>();
+    private final ArrayList<ClassifierWeka> classifiers = new ArrayList<>();
     private final ArrayList<AbstractFeatureGenerator> featureGenerators = new ArrayList<>();
     private final Properties properties = new Properties(defaultProperties());
 
@@ -138,10 +139,10 @@ public class Solution extends DefaultMutableTreeTableNode implements Serializabl
         properties.setProperty(PropertyNames.ClassNames.name(), newNames.toString());        
     }
     
-    public void trainClassifiers(ArrayList<SampleSetClass> samplesSets){
-        for (ClassifierInterface classifier:classifiers){
+    public void trainClassifiers(Instances instances){
+        for (ClassifierWeka classifier:classifiers){
             if (classifier.isActive()){
-                classifier.train(samplesSets);
+                classifier.train(instances);
             }
         }
     }
@@ -149,11 +150,11 @@ public class Solution extends DefaultMutableTreeTableNode implements Serializabl
     public int getNumelClassifiers(){
         return classifiers.size();
     }
-    public ArrayList<ClassifierInterface> getClassifiers() {
+    public ArrayList<ClassifierWeka> getClassifiers() {
         return classifiers;
     }
-    public void setClassifier(ClassifierInterface abstractClassifier ){
-        for (ClassifierInterface classifier:classifiers){
+    public void setClassifier(ClassifierWeka abstractClassifier ){
+        for (ClassifierWeka classifier:classifiers){
             if (abstractClassifier.getClass() == classifier.getClass()){
                 classifiers.remove(classifier);
                 classifiers.add(abstractClassifier);
@@ -163,15 +164,15 @@ public class Solution extends DefaultMutableTreeTableNode implements Serializabl
         classifiers.add(abstractClassifier);
     }
     public void removeClassifier(Class c){
-        for (ClassifierInterface classifier:classifiers){
+        for (ClassifierWeka classifier:classifiers){
             if (c == classifier.getClass()){
                 classifiers.remove(classifier);
                 return;
             }
         }
     }
-    public ClassifierInterface getClassifier(String c){
-        for (ClassifierInterface classifier:classifiers){
+    public ClassifierWeka getClassifier(String c){
+        for (ClassifierWeka classifier:classifiers){
             if (classifier.getClass().getCanonicalName().equals(c)){
                 return classifier;
             }
@@ -179,7 +180,7 @@ public class Solution extends DefaultMutableTreeTableNode implements Serializabl
         return null;
     }
     public boolean hasValidClassifier(){
-        for(ClassifierInterface classifier:classifiers){
+        for(ClassifierWeka classifier:classifiers){
             if (classifier.isValid()){
                 return true;
             }

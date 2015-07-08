@@ -1,7 +1,7 @@
 package avl.sv.shared.solution.xml;
 
 import avl.sv.shared.NamedNodeMapFunc;
-import avl.sv.shared.model.classifier.ClassifierInterface;
+import avl.sv.shared.model.classifier.ClassifierWeka;
 import avl.sv.shared.model.featureGenerator.AbstractFeatureGenerator;
 import avl.sv.shared.solution.Solution;
 import java.io.ByteArrayInputStream;
@@ -45,8 +45,8 @@ public class SolutionXML_Parser {
                     Node node = a.item(i);
                     solution.setProperty(node.getNodeName(), node.getNodeValue());
                 }
-                ArrayList<ClassifierInterface> classifiers = parseClassifiers(n);
-                for (ClassifierInterface classifier:classifiers){
+                ArrayList<ClassifierWeka> classifiers = parseClassifiers(n);
+                for (ClassifierWeka classifier:classifiers){
                     solution.setClassifier(classifier);
                 }
                 ArrayList<AbstractFeatureGenerator> featureGenerators = parseFeatureGenerators(n);
@@ -59,11 +59,11 @@ public class SolutionXML_Parser {
         return solution;
     }
 
-    private ArrayList<ClassifierInterface> parseClassifiers(Node n) {
-        ArrayList<ClassifierInterface> classifiers = new ArrayList<>();
+    private ArrayList<ClassifierWeka> parseClassifiers(Node n) {
+        ArrayList<ClassifierWeka> classifiers = new ArrayList<>();
         for (n = n.getFirstChild(); n != null; n = n.getNextSibling()) {
             if ("Classifier".equalsIgnoreCase(n.getNodeName())) {
-                ClassifierInterface classifier = parseClassifier(n);
+                ClassifierWeka classifier = parseClassifier(n);
                 if (classifier != null){
                     classifiers.add(classifier);
                 }
@@ -86,13 +86,13 @@ public class SolutionXML_Parser {
         return featureGenerators;
     }
     
-    private ClassifierInterface parseClassifier(Node n) {
+    private ClassifierWeka parseClassifier(Node n) {
         try {
             NamedNodeMap a = n.getAttributes();
             String classifierName = NamedNodeMapFunc.getString(a, "Class");
             Class<?> c = Class.forName(classifierName);
             Constructor constructor = c.getConstructor(new Class<?>[]{});
-            ClassifierInterface classifier = (ClassifierInterface) constructor.newInstance(new Object[]{});
+            ClassifierWeka classifier = (ClassifierWeka) constructor.newInstance(new Object[]{});
             classifier.setProperties(n);
             return classifier;
         } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException | InstantiationException ex) {

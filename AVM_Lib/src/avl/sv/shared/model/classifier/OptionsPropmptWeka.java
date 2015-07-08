@@ -134,7 +134,7 @@ public final class OptionsPropmptWeka extends javax.swing.JPanel implements Clas
     }
     
     @Override
-    public ClassifierInterface getClassifier() {
+    public ClassifierWeka getClassifier() {
         try {
             Class item = (Class) jComboBoxClassifiers.getSelectedItem();
             Classifier c = Classifier.forName(item.getCanonicalName(), getOptions());

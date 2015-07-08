@@ -168,7 +168,6 @@ public class SampleSetImage {
         }
     }
 
-
     public void setIsForTest(boolean isForTest) {
         this.isForTest = isForTest;
     }
@@ -280,9 +279,9 @@ public class SampleSetImage {
             }
             return;
         }
-        
-        pm.setProgress(3);
-
+        if (pm != null){
+            pm.setProgress(3);
+        }
         //TODO: maybe optimize this to use those features that are already known?
         
         long cpuFreeMem = Runtime.getRuntime().freeMemory();

@@ -17,6 +17,7 @@ public class AVM_Properties {
     public static String DATABASE_HOSTS_KEY = "database_hosts";
     public static String DATABASE_NAME_KEY = "database_name";
     public static String AUTO_LOGIN_DESTINATION_KEY = "auto_login_destination";
+    public static String AUTO_LOGIN_SERVER_KEY = "auto_login_server";
         
     private static Properties getDefaultProperties(){
         Properties p = new Properties();

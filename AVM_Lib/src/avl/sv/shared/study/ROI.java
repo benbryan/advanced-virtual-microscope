@@ -107,7 +107,7 @@ public abstract class ROI extends DefaultMutableTreeTableNode implements Seriali
                 updateTimer.stop();
                 if (state.equals(ROI_State.CREATED)) {
                     if (updateExecutor != null){
-                        updateExecutor.shutdown();
+                        updateExecutor.shutdownNow();
                     }
                     updateExecutor = Executors.newSingleThreadExecutor();
                     if (updateToRun != null){

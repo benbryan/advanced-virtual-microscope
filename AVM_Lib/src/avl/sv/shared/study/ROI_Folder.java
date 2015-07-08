@@ -84,9 +84,6 @@ public class ROI_Folder extends DefaultMutableTreeTableNode implements Serializa
         if (this.lineColor.equals(lineColor)){
             return;
         }
-        if (toString().equals(MessageStrings.Temporary)) {
-            direct = true;
-        }
         if (direct){
             this.lineColor = lineColor;
         } else {
@@ -173,9 +170,6 @@ public class ROI_Folder extends DefaultMutableTreeTableNode implements Serializa
 
     synchronized public void remove(MutableTreeTableNode node, boolean direct) {
         if (node instanceof ROI) {
-            if (toString().equals(MessageStrings.Temporary)){
-                direct = true;
-            }
             ROI roi = (ROI) node;
             if (direct) {
                 roi.removeListener(roiListener);
@@ -188,16 +182,6 @@ public class ROI_Folder extends DefaultMutableTreeTableNode implements Serializa
         }
     }
 
-    synchronized public void replace(ROI oldROI, ROI newROI, boolean direct) {
-        int index = getIndex(oldROI);
-        if (index >= 0) {
-            remove(oldROI, direct);
-            insert(newROI, index, direct);
-        } else {
-            add(newROI, direct);
-        }
-    }
-
     @Override
     synchronized public void insert(MutableTreeTableNode child, int index) {
         insert(child, index, true); //To change body of generated methods, choose Tools | Templates.
@@ -206,9 +190,6 @@ public class ROI_Folder extends DefaultMutableTreeTableNode implements Serializa
     synchronized public void insert(MutableTreeTableNode child, int index, boolean direct) {
         // make sure child is of roi and that its name is unique
         if (child instanceof ROI) {
-            if (toString().equals(MessageStrings.Temporary)) {
-                direct = true;
-            }
             final ROI roi = (ROI) child;
             if (direct) {
                 roi.addListener(roiListener);

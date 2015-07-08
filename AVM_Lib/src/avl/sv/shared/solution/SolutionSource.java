@@ -43,7 +43,7 @@ public abstract class SolutionSource extends AVM_Source{
 
     abstract public SolutionSource cloneSolution(String cloneName) throws PermissionDenied;
     
-    abstract public Permissions getPermissions(String username);
+    abstract public Permissions getPermissions(String username) throws PermissionDenied;
     abstract public String setPermissions(String username, Permissions permission) throws PermissionDenied;
     abstract public Permissions getPermissions();
     abstract public void addSolutionChangeListener(SolutionChangeListener listener);
