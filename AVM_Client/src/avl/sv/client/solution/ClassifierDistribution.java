@@ -28,15 +28,16 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 
-public class ClassifierResults extends javax.swing.JFrame implements ImageViewerPlugin {
+public class ClassifierDistribution extends javax.swing.JFrame implements ImageViewerPlugin {
     final ArrayList<Sample> samples;
     final String names[];
     final ImageViewer imageViewer;
     private final DefaultTableModel model;
     BufferedImage overlayImage = null;
-    int lowerX, lowerY, upperX, upperY;;
+    int lowerX, lowerY, upperX, upperY;
+    int classIdxSelected;
     
-    public ClassifierResults(String classifierName, ImageViewer imageViewer, ArrayList<Sample> samples, String names[], String title) {
+    public ClassifierDistribution(String classifierName, ImageViewer imageViewer, ArrayList<Sample> samples, String names[], String title) {
         initComponents();
         this.samples = samples;
         this.names = names;
@@ -68,13 +69,22 @@ public class ClassifierResults extends javax.swing.JFrame implements ImageViewer
             Graphics g = img.getGraphics();
             g.setColor(ColormapJet.getColor(i, names.length));
             g.fillRect(0, 0, img.getWidth(), img.getHeight());
-            model.addRow(new Object[]{names[i], new ImageIcon(img), true});
+            model.addRow(new Object[]{names[i], new ImageIcon(img), false});
         }
+        classIdxSelected = 0;
+        model.setValueAt(true, classIdxSelected, 2);
         jTableClassifierResults.setModel(model);
         
         model.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
+                model.removeTableModelListener(this);
+                for (int i = 0; i < model.getRowCount(); i++){
+                    model.setValueAt(false, i, 2);
+                }
+                classIdxSelected = e.getFirstRow();
+                model.setValueAt(true, classIdxSelected, 2);
+                model.addTableModelListener(this);
                 overlayImage = null;
                 imageViewer.repaint();
             }
@@ -113,42 +123,30 @@ public class ClassifierResults extends javax.swing.JFrame implements ImageViewer
             lowerX = Integer.MAX_VALUE;
             lowerY = Integer.MAX_VALUE;
             for (Sample sample : samples) {
-                for (int i = 0; i < names.length; i++) {
-                    if (sample.classifierLabel == i) {
-                        if (((boolean) model.getValueAt(i, 2))) {
-                            Rectangle r = sample.tile;
-                            if ((r.x+r.width) > upperX){
-                                upperX = r.x+r.width;
-                            }
-                            if ((r.y+r.height) > upperY){
-                                upperY = r.y+r.height;
-                            }
-                            if (r.x < lowerX){
-                                lowerX = r.x;
-                            }
-                            if (r.y < lowerY){
-                                lowerY = r.y;
-                            }
-                        }
-                        break;
-                    }
+                Rectangle r = sample.tile;
+                if ((r.x+r.width) > upperX){
+                    upperX = r.x+r.width;
                 }
+                if ((r.y+r.height) > upperY){
+                    upperY = r.y+r.height;
+                }
+                if (r.x < lowerX){
+                    lowerX = r.x;
+                }
+                if (r.y < lowerY){
+                    lowerY = r.y;
+                }                
             }
             int tileDim = samples.get(0).tile.width;
             overlayImage = new BufferedImage((upperX-lowerX)/tileDim, (upperY-lowerY)/tileDim, BufferedImage.TYPE_4BYTE_ABGR);
             Graphics2D gOverlayImg = (Graphics2D) overlayImage.getGraphics();
+            
             for (Sample sample : samples) {
-                for (int i = 0; i < names.length; i++) {
-                    if (sample.classifierLabel == i) {
-                        if (((boolean) model.getValueAt(i, 2))) {
-                            gOverlayImg.setColor(ColormapJet.getColor(i, names.length));
-                            Rectangle r = sample.tile;
-                            Rectangle rPaint = new Rectangle((r.x-lowerX)/tileDim, (r.y-lowerY)/tileDim, 1, 1);
-                            gOverlayImg.fill(rPaint);
-                        }
-                        break;
-                    }
-                }
+                double v = sample.distribution[classIdxSelected];
+                gOverlayImg.setColor(ColormapGray.getColor((int)(v*255), 255));
+                Rectangle r = sample.tile;
+                Rectangle rPaint = new Rectangle((r.x-lowerX)/tileDim, (r.y-lowerY)/tileDim, 1, 1);
+                gOverlayImg.fill(rPaint);
             }
         }
 

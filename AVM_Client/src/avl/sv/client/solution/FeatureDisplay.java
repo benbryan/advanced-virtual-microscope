@@ -466,4 +466,9 @@ public class FeatureDisplay extends javax.swing.JFrame implements ImageViewerPlu
     private javax.swing.JTable jTableClassifierResults;
     // End of variables declaration//GEN-END:variables
 
+    @Override
+    public void close() {
+        dispose();
+    }
+
 }

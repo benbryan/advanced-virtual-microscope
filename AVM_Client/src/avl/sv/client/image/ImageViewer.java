@@ -137,8 +137,8 @@ public class ImageViewer extends javax.swing.JPanel implements MouseMotionListen
 
     public void close() {
         imageSource.close();
-        for (ImageViewerPlugin plugin : plugins) {
-            plugin.dispose();
+        for (ImageViewerPlugin plugin : plugins) {            
+            plugin.close();
         }
     }
             

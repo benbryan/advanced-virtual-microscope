@@ -1,7 +1,6 @@
 package avl.sv.client.solution;
 
 import avl.sv.shared.solution.Solution;
-import avl.sv.shared.model.classifier.ClassifierInterface;
 import avl.sv.shared.model.classifier.ClassifierOptionsPromptInterface;
 import avl.sv.shared.model.classifier.ClassifierWeka;
 import avl.sv.shared.model.featureGenerator.AbstractFeatureGenerator;
@@ -48,10 +47,10 @@ public class ModelSetup extends javax.swing.JDialog {
             jPanelClassifiers.setLayout(new BoxLayout(jPanelClassifiers, BoxLayout.Y_AXIS));
             for (String c : classifiers) {
                 boolean enabled;
-                ClassifierInterface classifier = solution.getClassifier(c);
+                ClassifierWeka classifier = solution.getClassifier(c);
                 if (classifier == null) {
                     try {                        
-                        classifier = (ClassifierInterface) getClass().getClassLoader().loadClass(c).newInstance();
+                        classifier = (ClassifierWeka) getClass().getClassLoader().loadClass(c).newInstance();
                     } catch (InstantiationException | IllegalAccessException ex) {
                         Logger.getLogger(ModelSetup.class.getName()).log(Level.SEVERE, null, ex);
                         continue;
@@ -181,7 +180,7 @@ public class ModelSetup extends javax.swing.JDialog {
             if (comp instanceof JCheckBox) {
                 JCheckBox checkBox = (JCheckBox) comp;
                 JPanel panel = (JPanel) checkBox.getClientProperty("panel");
-                ClassifierInterface classifier = ((ClassifierOptionsPromptInterface) panel).getClassifier();
+                ClassifierWeka classifier = ((ClassifierOptionsPromptInterface) panel).getClassifier();
                 classifier.setActive(checkBox.isSelected());
                 classifier.invalidate();
                 if ((null == solution.getClassifier(classifier.getClass().getCanonicalName())) && !checkBox.isSelected()) {
@@ -305,6 +304,9 @@ public class ModelSetup extends javax.swing.JDialog {
         iscanceled = false;
         collectTabData();
         setVisible(false);
+        for (ClassifierWeka classifier:solution.getClassifiers()){
+            classifier.invalidate();
+        }
         dispose();
     }//GEN-LAST:event_jButtonAcceptActionPerformed
 

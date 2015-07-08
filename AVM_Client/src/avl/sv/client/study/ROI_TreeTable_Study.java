@@ -17,8 +17,4 @@ public class ROI_TreeTable_Study extends ROI_TreeTable {
         addROI_Folder(folder);
         return folder;
     }
-
-
-
-
 }

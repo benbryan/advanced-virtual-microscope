@@ -6,7 +6,6 @@ import static avl.sv.client.AdvancedVirtualMicroscope.getInstance;
 import avl.sv.client.image.ImagesSourcePort;
 import avl.sv.server.solution.SolutionPort;
 import avl.sv.shared.AVM_Session;
-import avl.sv.shared.AVM_Source;
 import avl.sv.shared.PermissionDenied;
 import avl.sv.shared.Permissions;
 import avl.sv.shared.solution.SolutionSource;
@@ -35,11 +34,6 @@ public class SolutionsSourcePort extends SolutionsSource {
     @Override
     public String getDescription(int id) {
         return solutionPort.getDescription(id);
-    }
-
-    @Override
-    public String getPermissions(int id, String targetUsername) {
-        return solutionPort.getPermissions(id, targetUsername);
     }
 
     @Override

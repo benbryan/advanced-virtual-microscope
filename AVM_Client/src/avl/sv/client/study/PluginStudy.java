@@ -13,8 +13,6 @@ import avl.sv.shared.study.StudiesSource;
 import avl.sv.shared.study.StudySource;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;

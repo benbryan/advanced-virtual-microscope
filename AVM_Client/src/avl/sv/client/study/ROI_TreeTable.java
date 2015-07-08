@@ -53,7 +53,7 @@ abstract public class ROI_TreeTable extends JXTreeTable implements MouseMotionLi
 
     public ROI_Folder lastSelectedROI_Folder;
     protected AnnotationSet annoSet = null;
-    private TreeTableModelStudy model;
+    protected TreeTableModelStudy model;
 
     public ROI_TreeTable() {
         init();
@@ -80,7 +80,7 @@ abstract public class ROI_TreeTable extends JXTreeTable implements MouseMotionLi
             setColumnModel(columnModel);
         }
         updateSelectedROIs();
-        lastSelectedROI_Folder = null;
+        lastSelectedROI_Folder = getDefaultROI_Folder();
     }
 
     @Override
@@ -128,10 +128,6 @@ abstract public class ROI_TreeTable extends JXTreeTable implements MouseMotionLi
     }
 
     abstract protected ROI_Folder getDefaultROI_Folder();
-
-    private ROI_TreeTable(TreeTableModel treeModel) throws Exception {
-        throw new Exception("Not implemented");
-    }
 
     private void init() {
         setDragEnabled(true);

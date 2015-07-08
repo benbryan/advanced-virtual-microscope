@@ -67,8 +67,8 @@ public final class StudySourcePort extends StudySource {
     }
 
     @Override
-    public StudySourcePort cloneStudy(String cloneName, String adminName) {
-        String result = cloneStudy(cloneName);
+    public StudySourcePort cloneStudy(String cloneName) {
+        String result = port.cloneStudy(studyID, cloneName);
         if (result == null) {
             return null;
         }
@@ -106,10 +106,6 @@ public final class StudySourcePort extends StudySource {
         } catch (PermissionDenied ex) {
             Logger.getLogger(StudySourcePort.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
-
-    protected String cloneStudy(String cloneName) {
-        return port.cloneStudy(studyID, cloneName);
     }
 
     @Override

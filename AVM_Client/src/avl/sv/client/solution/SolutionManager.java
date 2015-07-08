@@ -9,6 +9,7 @@ import avl.sv.shared.ProgressBarForegroundPainter;
 import avl.sv.client.SearchableSelector;
 import avl.sv.client.image.ImageViewerPlugin;
 import avl.sv.client.image.ImageViewerPluginListener;
+import avl.sv.client.study.ExportDialogROIsFullStudy;
 import avl.sv.shared.study.ROI_Folder;
 import avl.sv.shared.study.AnnotationSet;
 import avl.sv.shared.study.ROI;
@@ -19,7 +20,6 @@ import avl.sv.shared.solution.Sample;
 import avl.sv.shared.solution.SampleSetClass;
 import avl.sv.shared.solution.SampleSetImage;
 import avl.sv.shared.solution.Solution;
-import avl.sv.shared.model.classifier.ClassifierInterface;
 import avl.sv.shared.model.featureGenerator.AbstractFeatureGenerator;
 import avl.sv.shared.Permissions;
 import avl.sv.shared.image.ImageManager;
@@ -28,9 +28,7 @@ import avl.sv.shared.image.ImageReference;
 import avl.sv.shared.image.ImageSource;
 import avl.sv.shared.image.ImagesSource;
 import avl.sv.shared.model.classifier.ClassifierWeka;
-import avl.sv.shared.model.classifier.SamplesToInstances;
 import avl.sv.shared.solution.SolutionChangeEvent;
-import avl.sv.shared.solution.SolutionChangeListener;
 import avl.sv.shared.solution.SolutionSource;
 import avl.sv.shared.solution.xml.SolutionXML_Parser;
 import avl.sv.shared.study.StudySource;
@@ -43,8 +41,6 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -65,6 +61,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -118,104 +115,117 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
     private DefaultTreeModel jTreeStudyModel;
     private boolean canModify;
     JSpinner jSpinnerTileDim, jSpinnerWindowDim;
+    private ExecutorService executorGenerateModel;
 
-    private void errorOut(String msg){
+    private void errorOut(String msg) {
         String str = "Failed to load solution " + solutionSource.getName() + " because of: " + msg;
         AdvancedVirtualMicroscope.setStatusText(str, 5000);
         JOptionPane.showMessageDialog(rootPane, str);
     }
-    
+
     public SolutionManager(String username, SolutionSource solutionSource) {
         this.solutionSource = solutionSource;
         this.studySource = solutionSource.getStudySource();
         this.imagesSource = studySource.getImagesSource();
         this.username = username;
-        if (solutionSource == null) {
-            throw new NullPointerException("SolutionSource must not be null");
-        }
-        try {
-            solution = solutionSource.getSolution();
-            if (solution == null) {
-                errorOut("Retrieved null solution");
-            }
-        } catch (Exception ex) {
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
-            errorOut(ex.getMessage());
-            return;
-        }
 
-        setupLookAndFeel();
-        initComponents();
-        jTreeStudy.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        EventQueue.invokeLater(new Runnable() {
 
-        canModify = solutionSource.getPermissions(username).canModify();
-        if (!canModify) {
-            jMenuClassifier.setVisible(false);
-            jMenuItemAddImages.setVisible(false);
-            jMenuItemClassAdd.setVisible(false);
-            jMenuItemClassRename.setVisible(false);
-            jMenuItemClassRemove.setVisible(false);
-            jMenuItemDelete.setVisible(false);
-            jMenuItemGenerateModel.setVisible(false);
-            jMenuItemImportClassifier.setVisible(false);
-            jMenuItemSetupModel.setVisible(false);
-            jMenuItemDelete1.setVisible(false);
-        } else {
-            addTileDimSpinner();
-        }
-
-        setupStudyTable();
-
-        jTextFieldSolutionName.setText(solutionSource.getName());
-        updateGenerateModelButton();
-
-        addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosing(WindowEvent e) {
-                imageViewers.keySet().stream().forEach((imageViewer) -> {
-                    AdvancedVirtualMicroscope.closeImageViewer(imageViewer);
-                });
-                solutionSource.getStudySource().close();
-                solutionSource.close();
-            }
-        });
-
-        jCheckBoxMenuItemRunOnServer.setVisible(solutionSource instanceof SolutionSourcePort);
-        solutionSource.addSolutionChangeListener((SolutionChangeEvent event) -> {
-            switch (event.type){
-                case Full:
-                    try {
-                        solution = new SolutionXML_Parser().parse(event.eventData);
-                        AdvancedVirtualMicroscope.setStatusText("Solution "+solution.toString()+" updated from server", 5000);
-                    } catch (ParserConfigurationException | SAXException | IOException ex) {
-                        Logger.getLogger(SolutionManager.class.getName()).log(Level.SEVERE, null, ex);
+            public void run() {
+                if (solutionSource == null) {
+                    throw new NullPointerException("SolutionSource must not be null");
+                }
+                try {
+                    solution = solutionSource.getSolution();
+                    if (solution == null) {
+                        errorOut("Retrieved null solution");
                     }
-                    break;
+                } catch (Exception ex) {
+                    Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+                    errorOut(ex.getMessage());
+                    return;
+                }
+
+                setupLookAndFeel();
+                initComponents();
+                jTreeStudy.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+                canModify = solutionSource.getPermissions().canModify();
+                if (!canModify) {
+                    jMenuClassifier.setVisible(false);
+                    jMenuItemAddImages.setVisible(false);
+                    jMenuItemClassAdd.setVisible(false);
+                    jMenuItemClassRename.setVisible(false);
+                    jMenuItemClassRemove.setVisible(false);
+                    jMenuItemDelete.setVisible(false);
+                    jMenuItemGenerateModel.setVisible(false);
+                    jMenuItemImportClassifier.setVisible(false);
+                    jMenuItemSetupModel.setVisible(false);
+                    jMenuItemDelete1.setVisible(false);
+                } else {
+                    addTileDimSpinner();
+                }
+
+                setupStudyTable();
+
+                jTextFieldSolutionName.setText(solutionSource.getName());
+                updateGenerateModelButton();
+
+                addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        if (executorGenerateModel != null) {
+                            executorGenerateModel.shutdownNow();
+                            executorGenerateModel = null;
+                        }
+                        for (ImageViewer imageViewer : imageViewers.keySet()) {
+                            AdvancedVirtualMicroscope.closeImageViewer(imageViewer);
+                        }
+                        solutionSource.getStudySource().close();
+                        solutionSource.close();
+                    }
+                });
+
+                jCheckBoxMenuItemRunOnServer.setVisible(solutionSource instanceof SolutionSourcePort);
+                solutionSource.addSolutionChangeListener((SolutionChangeEvent event) -> {
+                    switch (event.type) {
+                        case Full:
+                            try {
+                                solution = new SolutionXML_Parser().parse(event.eventData);
+                                AdvancedVirtualMicroscope.setStatusText("Solution " + solution.toString() + " updated from server", 5000);
+                            } catch (ParserConfigurationException | SAXException | IOException ex) {
+                                Logger.getLogger(SolutionManager.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            break;
+                    }
+                });
+
+                jFileChooserImportExportClassifier = new JFileChooser();
+                jFileChooserImportExportClassifier.setMultiSelectionEnabled(false);
+                jFileChooserImportExportClassifier.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                jFileChooserImportExportClassifier.setFileFilter(new MODEL_Filter());
+
+                jFileChooserWekaExportTrainingData = new JFileChooser();
+                jFileChooserWekaExportTrainingData.setFileFilter(new ARFF_Filter());
+                jFileChooserWekaExportTrainingData.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                jFileChooserWekaExportTrainingData.setMultiSelectionEnabled(false);
+                pack();
             }
         });
-
-        jFileChooserImportExportClassifier = new JFileChooser();
-        jFileChooserImportExportClassifier.setMultiSelectionEnabled(false);
-        jFileChooserImportExportClassifier.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        jFileChooserImportExportClassifier.setFileFilter(new MODEL_Filter());
-
-        jFileChooserWekaExportTrainingData = new JFileChooser();
-        jFileChooserWekaExportTrainingData.setFileFilter(new ARFF_Filter());
-        jFileChooserWekaExportTrainingData.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        jFileChooserWekaExportTrainingData.setMultiSelectionEnabled(false);
 
         pack();
     }
-            
+
     private void setupStudyTable() {
         String result = studySource.updateImageSets();
-        if (result.contains("error:")){
-            JOptionPane.showMessageDialog(rootPane, "Permission was denied while trying to gather training data. " + result , "Error", JOptionPane.ERROR_MESSAGE);
+        if (result.contains("error:")) {
+            JOptionPane.showMessageDialog(rootPane, "Permission was denied while trying to gather training data. " + result, "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         Permissions p = studySource.getPermissions();
         jMenuItemAddImages.setEnabled(p.canModify());
-        
+
         jTreeStudy.setDragEnabled(true);
         jTreeStudy.setDropMode(DropMode.ON_OR_INSERT);
         jTreeStudy.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
@@ -249,9 +259,12 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                 ArrayList<ROI> selectedROIs = imageViewer.getROI_TreeTable().getSelectedROIs();
                 if (selectedROIs.isEmpty()) {
                     jButtonClassify.setEnabled(false);
+                    jButtonDistribution.setEnabled(false);
                     jButtonViewFeatures.setEnabled(false);
                 } else {
-                    jButtonClassify.setEnabled(s.hasValidClassifier());
+                    boolean hasValiedClassifier = s.hasValidClassifier();
+                    jButtonClassify.setEnabled(hasValiedClassifier);
+                    jButtonDistribution.setEnabled(hasValiedClassifier);
                     jButtonViewFeatures.setEnabled(s.getNumelFeatures() > 0);
                 }
             } catch (Exception ex) {
@@ -284,7 +297,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
 
     private ArrayList<ImageSource> createRequiredImageSources() {
         ArrayList<ImageSource> imageSources = new ArrayList<>();
-        for (ImageManager imageManager:studySource.getAllImageManagers()){
+        for (ImageManager imageManager : studySource.getAllImageManagers()) {
             AnnotationSet annoSet = studySource.getAnnotationSet(imageManager.imageReference);
             for (ROI_Folder folder : annoSet.getROI_Folders()) {
                 if (!folder.getROIs().isEmpty()) {
@@ -305,68 +318,61 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
     }
 
     public void paintOnImageViewer(ImageViewer sv, Graphics gOrig) {
-        if (!isVisible()) {
-            return;
-        }
         if (solution == null) {
             return;
         }
         Graphics2D g = (Graphics2D) gOrig.create();
         sv.concatenateImageToDisplayTransform(g);
-        paintSampleTiles(sv, g);
+        if (((ROI_ManagerPanelSolution) sv.getROI_ManagerPanel()).isShowTilesChecked()) {
+            paintSampleTiles(sv, g);
+        }
     }
 
     private void paintSampleTiles(ImageViewer imageViewer, Graphics gOrig) {
-        if (solution == null){
-            return;
-        }
-        
-        ROI_ManagerPanelSolution roiManager = (ROI_ManagerPanelSolution) imageViewer.getROI_ManagerPanel();
-        
-        if (!roiManager.isShowTilesChecked()) {
+        if (solution == null) {
             return;
         }
         Graphics2D g = (Graphics2D) gOrig.create();
         int tileDim = solution.getTileDim();
         int tileWindowDim = solution.getTileWindowDim();
         ImageSource imageSource = imageViewer.getImageSource();
-        
-        if (g.getTransform().getScaleX()*tileDim < 4){
+
+        if (g.getTransform().getScaleX() * tileDim < 4) {
             Graphics2D gDisp = (Graphics2D) g.create();
             gDisp.setTransform(new AffineTransform());
-            
+
             Rectangle window = gDisp.getClipBounds();
             gDisp.setColor(Color.white);
-            gDisp.fillRect(window.width-150, window.height-28, 115, 18);
+            gDisp.fillRect(window.width - 150, window.height - 28, 115, 18);
             gDisp.setColor(Color.black);
-            gDisp.drawRect(window.width-150, window.height-28, 115, 18);
-            gDisp.drawString("Zoom in to see tiles",window.width-150+2, window.height-14);
+            gDisp.drawRect(window.width - 150, window.height - 28, 115, 18);
+            gDisp.drawString("Zoom in to see tiles", window.width - 150 + 2, window.height - 14);
             return;
         }
 
         Rectangle bounds = g.getClipBounds();
-        bounds.x = (int) Math.max(0, Math.floor((double)bounds.x/tileDim)*tileDim);
-        bounds.y = (int) Math.max(0, Math.floor((double)bounds.y/tileDim)*tileDim);
-        bounds.width = Math.min(bounds.width, imageSource.getImageDimX());        
+        bounds.x = (int) Math.max(0, Math.floor((double) bounds.x / tileDim) * tileDim);
+        bounds.y = (int) Math.max(0, Math.floor((double) bounds.y / tileDim) * tileDim);
+        bounds.width = Math.min(bounds.width, imageSource.getImageDimX());
         bounds.height = Math.min(bounds.height, imageSource.getImageDimY());
-        
+
         for (int x = 0; x < imageSource.getImageDimX(); x += tileDim) {
-            g.drawLine(x, bounds.y, x, bounds.y+bounds.height);
+            g.drawLine(x, bounds.y, x, bounds.y + bounds.height);
         }
         for (int y = 0; y < imageSource.getImageDimY(); y += tileDim) {
-            g.drawLine(bounds.x, y, bounds.x+bounds.width, y);
+            g.drawLine(bounds.x, y, bounds.x + bounds.width, y);
         }
-        if (tileDim != tileWindowDim){
-            g.setStroke(new BasicStroke(1, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER,  10, new float[]{10.0f}, 0));
+        if (tileDim != tileWindowDim) {
+            g.setStroke(new BasicStroke(1, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10, new float[]{10.0f}, 0));
             g.setColor(Color.red);
-            int skip = (int) Math.ceil((float)tileWindowDim/tileDim)+2;
-            for (int x = bounds.x; x < bounds.x+bounds.width; x += tileDim*skip) {
-                for (int y = bounds.y; y < bounds.y+bounds.height; y += tileDim*skip) {
-                    g.drawRect(x-tileWindowDim/2, y-tileWindowDim/2, tileWindowDim, tileWindowDim);
-                }  
+            int skip = (int) Math.ceil((float) tileWindowDim / tileDim) + 2;
+            for (int x = bounds.x; x < bounds.x + bounds.width; x += tileDim * skip) {
+                for (int y = bounds.y; y < bounds.y + bounds.height; y += tileDim * skip) {
+                    g.drawRect(x - tileWindowDim / 2, y - tileWindowDim / 2, tileWindowDim, tileWindowDim);
+                }
             }
         }
-        
+
     }
 
     SolutionSource getSolutionSource() {
@@ -395,12 +401,16 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         jTextFieldSolutionName = new javax.swing.JTextField();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTreeStudy = new javax.swing.JTree();
+        jButtonDistribution = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenuSolution = new javax.swing.JMenu();
         jMenuItemAddImages = new javax.swing.JMenuItem();
         jMenuItemInfo = new javax.swing.JMenuItem();
         jMenuItemDelete = new javax.swing.JMenuItem();
         jMenuItemClone = new javax.swing.JMenuItem();
+        jMenu3 = new javax.swing.JMenu();
+        jMenuItemExportAllROIs = new javax.swing.JMenuItem();
+        jMenuItemRemoveUnusedImages = new javax.swing.JMenuItem();
         jMenuOptions = new javax.swing.JMenu();
         jMenu2 = new javax.swing.JMenu();
         jMenuItemWekaExportTrainingData = new javax.swing.JMenuItem();
@@ -440,6 +450,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         jButtonClassify.setText("Classify");
         jButtonClassify.setToolTipText("Generate a model and select an ROI to enable");
         jButtonClassify.setEnabled(false);
+        jButtonClassify.setPreferredSize(new java.awt.Dimension(100, 23));
         jButtonClassify.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonClassifyActionPerformed(evt);
@@ -449,6 +460,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         jButtonViewFeatures.setText("View Features");
         jButtonViewFeatures.setToolTipText("Select an ROI to enable");
         jButtonViewFeatures.setEnabled(false);
+        jButtonViewFeatures.setPreferredSize(new java.awt.Dimension(100, 23));
         jButtonViewFeatures.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonViewFeaturesActionPerformed(evt);
@@ -457,8 +469,8 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
 
         jLabel1.setText("Solution Name");
 
+        jTextFieldSolutionName.setEditable(false);
         jTextFieldSolutionName.setText("n/a");
-        jTextFieldSolutionName.setEnabled(false);
 
         javax.swing.tree.DefaultMutableTreeNode treeNode1 = new javax.swing.tree.DefaultMutableTreeNode("root");
         jTreeStudy.setModel(new javax.swing.tree.DefaultTreeModel(treeNode1));
@@ -473,6 +485,15 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             }
         });
         jScrollPane1.setViewportView(jTreeStudy);
+
+        jButtonDistribution.setText("Distribution");
+        jButtonDistribution.setToolTipText("Generate a model and select an ROI to enable");
+        jButtonDistribution.setEnabled(false);
+        jButtonDistribution.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonDistributionActionPerformed(evt);
+            }
+        });
 
         jMenuSolution.setText("Solution");
 
@@ -509,6 +530,26 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         jMenuSolution.add(jMenuItemClone);
 
         jMenuBar1.add(jMenuSolution);
+
+        jMenu3.setText("Functions");
+
+        jMenuItemExportAllROIs.setText("Export all ROIs");
+        jMenuItemExportAllROIs.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemExportAllROIsActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMenuItemExportAllROIs);
+
+        jMenuItemRemoveUnusedImages.setText("Remove unused images");
+        jMenuItemRemoveUnusedImages.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemRemoveUnusedImagesActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMenuItemRemoveUnusedImages);
+
+        jMenuBar1.add(jMenu3);
 
         jMenuOptions.setText("Options");
         jMenuBar1.add(jMenuOptions);
@@ -610,10 +651,11 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                 .addComponent(jTextFieldSolutionName))
             .addComponent(jScrollPane1)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jButtonViewFeatures, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jButtonViewFeatures, javax.swing.GroupLayout.DEFAULT_SIZE, 101, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButtonClassify, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 19, Short.MAX_VALUE))
+                .addComponent(jButtonClassify, javax.swing.GroupLayout.DEFAULT_SIZE, 99, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jButtonDistribution, javax.swing.GroupLayout.DEFAULT_SIZE, 95, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -622,11 +664,12 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                     .addComponent(jLabel1)
                     .addComponent(jTextFieldSolutionName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButtonViewFeatures)
-                    .addComponent(jButtonClassify))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                    .addComponent(jButtonClassify, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jButtonDistribution, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jButtonViewFeatures, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 196, Short.MAX_VALUE))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 179, Short.MAX_VALUE))
         );
 
         pack();
@@ -646,7 +689,6 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
 
     @SuppressWarnings("unchecked")
     private void jButtonClassifyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonClassifyActionPerformed
-
         // Setup Parameters
         final ImageViewer imageViewer = imageViewerLastSelected;
         if (imageViewer == null) {
@@ -663,8 +705,8 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             try {
                 UIManager.put("ProgressBar[Enabled].foregroundPainter", new ProgressBarForegroundPainter());
                 AVM_ProgressMonitor pm = new AVM_ProgressMonitor(getThis(), "Preparing labels for display", "Locating samples", 0, 1000000);
-                pm.setMillisToPopup(100);
-                pm.setMillisToDecideToPopup(100);
+                pm.setMillisToPopup(50);
+                pm.setMillisToDecideToPopup(50);
                 pm.setProgress(1);
                 pm.setProgress(2);
                 pm.setNote("Locating samples");
@@ -694,9 +736,9 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                         JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(this), "Failed to generate features", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 } else {
-                    for (ClassifierInterface classifier : solutionHold.getClassifiers()) {
+                    for (ClassifierWeka classifier : solutionHold.getClassifiers()) {
                         if (classifier.isActive() && classifier.isValid()) {
-                            classifier.predict(samples);
+                            classifier.classify(samples);
                             Collection<String> classNames = solution.getClassifierClassNames().values();
                             ClassifierResults cr = new ClassifierResults(classifier.getName(), imageViewer, samples, classNames.toArray(new String[classNames.size()]), "Overlay #" + String.valueOf(overlayIdx++));
                             imageViewer.addPlugin(cr);
@@ -710,6 +752,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             }
         });
     }//GEN-LAST:event_jButtonClassifyActionPerformed
+
 
     private void jButtonViewFeaturesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonViewFeaturesActionPerformed
         if (solution.getNumelFeatures() == 0) {
@@ -733,8 +776,8 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         }
         UIManager.put("ProgressBar[Enabled].foregroundPainter", new ProgressBarForegroundPainter());
         final AVM_ProgressMonitor pm = new AVM_ProgressMonitor(getThis(), "Preparing features for display", "", 0, 1000000);
-        pm.setMillisToPopup(500);
-        pm.setMillisToDecideToPopup(100);
+        pm.setMillisToPopup(50);
+        pm.setMillisToDecideToPopup(50);
         pm.setProgress(1);
         Executors.newSingleThreadExecutor().submit(() -> {
             try {
@@ -743,7 +786,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                 SampleSetImage sampleSetImage = new SampleSetImage(imageSource, selectedROIs, solutionHold, solutionSource);
                 sampleSetImage.setIsForTest(true);
                 pm.setProgress(3);
-                pm.setMaximum(sampleSetImage.samples.size()+10);
+                pm.setMaximum(sampleSetImage.samples.size() + 10);
                 try {
                     sampleSetImage.generateSampleFeatures(pm);
                 } catch (OutOfMemoryError ex) {
@@ -831,7 +874,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             try {
                 String result = solutionSource.setSolution(solution);
                 if (result.startsWith("error:")) {
-                    AdvancedVirtualMicroscope.setStatusText("error while updating solution " + solution.toString() + "\n" + result, overlayIdx); 
+                    AdvancedVirtualMicroscope.setStatusText("error while updating solution " + solution.toString() + "\n" + result, overlayIdx);
                 }
             } catch (PermissionDenied ex) {
                 Logger.getLogger(SolutionManager.class.getName()).log(Level.SEVERE, null, ex);
@@ -858,7 +901,12 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         // Setup Parameters
         Solution solutionHold = solution;
         // Generate model
-        Executors.newSingleThreadExecutor().submit(() -> {
+        if (executorGenerateModel != null) {
+            executorGenerateModel.shutdownNow();
+            executorGenerateModel = null;
+        }
+        executorGenerateModel = Executors.newSingleThreadExecutor();
+        executorGenerateModel.submit(() -> {
             if (jCheckBoxMenuItemRunOnServer.isSelected()) {
                 SolutionSourcePort ssp = (SolutionSourcePort) solutionSource;
                 String result = ssp.trainOnServer();
@@ -872,10 +920,10 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                     t.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            try{
-                                if (pm.isCanceled()){
+                            try {
+                                if (pm.isCanceled()) {
                                     ssp.cancelMonitor(progressMonitorID);
-                                    for (ClassifierInterface classifier : solution.getClassifiers()) {
+                                    for (ClassifierWeka classifier : solution.getClassifiers()) {
                                         if (classifier.isActive()) {
                                             JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(null), classifier.getMessage(), "Classifier Results", JOptionPane.INFORMATION_MESSAGE);
                                         }
@@ -894,7 +942,8 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                                     pm.close();
                                     t.stop();
                                 }
-                            } catch (Exception ex){ }
+                            } catch (Exception ex) {
+                            }
                         }
                     });
                     t.setRepeats(true);
@@ -904,11 +953,10 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             } else {
                 // Run training locally
                 jMenuItemGenerateModel.setEnabled(false);
-
                 UIManager.put("ProgressBar[Enabled].foregroundPainter", new ProgressBarForegroundPainter());
-                final AVM_ProgressMonitor pm = new AVM_ProgressMonitor(getThis(), "Collecting image references", "", 0, 1000000);
-                pm.setMillisToDecideToPopup(500);
-                pm.setMillisToPopup(500);
+                final AVM_ProgressMonitor pm = new AVM_ProgressMonitor(getThis(), "Generating model", "", 0, 1000000);
+                pm.setMillisToDecideToPopup(50);
+                pm.setMillisToPopup(50);
                 pm.setProgress(1);
                 pm.setNote("Collecting image sources");
                 final ArrayList<ImageSource> imageSources;
@@ -916,7 +964,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                 pm.setProgress(3);
                 pm.setNote("Generating Features");
                 try {
-                    ArrayList<SampleSetClass> samplesSets = null;
+                    Instances instances = null;
 
                     ArrayList<String> featureNames = new ArrayList<>();
                     for (AbstractFeatureGenerator generator : solutionHold.getFeatureGenerators()) {
@@ -929,7 +977,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                     classNames.addAll(solutionHold.getClassifierClassNames().values());
 
                     try {
-                        samplesSets = SampleSetClass.generateTrainingSets(imageSources, solutionSource, pm);
+                        instances = SampleSetClass.generateInstances(imageSources, solutionSource, pm);
                     } catch (OutOfMemoryError ex) {
                         pm.close();
                         Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
@@ -946,20 +994,27 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                         return;
                     }
 
-                    if (samplesSets == null) {
+                    if (instances == null) {
                         if (!pm.isCanceled()) {
                             JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(this), "Failed to generate features", "Error", JOptionPane.ERROR_MESSAGE);
                         }
                     }
 
-                    if (pm.isCanceled()){
+                    if (pm.isCanceled()) {
                         closeImageSources(imageSources);
                         return;
                     }
-                    
+
                     // Check if there are samples in each set
-                    for (SampleSetClass sampleSet : samplesSets) {
-                        if (sampleSet.samples.size() < 10) {
+                    long count[] = new long[instances.numClasses()];
+                    for (int i = 0; i < count.length; i++) {
+                        count[i] = 0;
+                    }
+                    for (int i = 0; i < instances.numInstances(); i++) {
+                        count[(int) instances.instance(i).classValue()]++;
+                    }
+                    for (int i = 0; i < count.length; i++) {
+                        if (count[i] < 10) {
                             JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(this), "Not enough samples collected", "Error", JOptionPane.ERROR_MESSAGE);
                             jMenuItemGenerateModel.setEnabled(true);
                             closeImageSources(imageSources);
@@ -967,23 +1022,23 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                         }
                     }
                     pm.setNote("Training classifier(s)");
-                    solution.trainClassifiers(samplesSets);
+                    solution.trainClassifiers(instances);
                     saveSolution();
                     pm.close();
                     jMenuItemGenerateModel.setEnabled(true);
-                    for (ClassifierInterface classifier : solution.getClassifiers()) {
+                    for (ClassifierWeka classifier : solution.getClassifiers()) {
                         if (classifier.isActive()) {
                             JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(this), classifier.getMessage(), "Classifier Results", JOptionPane.INFORMATION_MESSAGE);
                         }
                     }
                 } catch (Exception ex) {
                     pm.close();
-                    if (!pm.isCanceled()){
+                    if (!pm.isCanceled()) {
                         JOptionPane.showMessageDialog(this, "Failed to generate the classifier(s)", "Error", JOptionPane.ERROR_MESSAGE);
                         Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", ex);
                     }
                     jMenuItemGenerateModel.setEnabled(true);
-                } 
+                }
                 closeImageSources(imageSources);
             }
         });
@@ -1009,6 +1064,13 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
     }//GEN-LAST:event_jMenuItemDeleteActionPerformed
 
     private void jTreeStudyMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTreeStudyMouseClicked
+        if ((evt.getClickCount() == 1) && (evt.getButton() == MouseEvent.BUTTON1)) {
+            TreePath path = jTreeStudy.getClosestPathForLocation(evt.getPoint().x, evt.getPoint().y);
+            if (path == null) {
+                return;
+            }
+            jTreeStudy.setSelectionPath(path);
+        }
         if ((evt.getClickCount() == 2) && (evt.getButton() == MouseEvent.BUTTON1)) {
             TreePath path = jTreeStudy.getClosestPathForLocation(evt.getPoint().x, evt.getPoint().y);
             if (path == null) {
@@ -1041,25 +1103,25 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             imageViewerLastSelected = imageViewer;
             JFrame frame = AdvancedVirtualMicroscope.addImageViewer(imageViewer);
             imageViewers.put(imageViewer, frame);
-            frame.addFocusListener(new FocusAdapter() {
+            frame.addWindowListener(new WindowAdapter() {
                 @Override
-                public void focusGained(FocusEvent e) {
+                public void windowActivated(WindowEvent e) {
                     imageViewerLastSelected = imageViewer;
                 }
-            });
-            frame.addWindowListener(new WindowAdapter() {
+
                 @Override
                 public void windowClosing(WindowEvent e) {
                     imageViewers.remove(imageViewer);
                 }
             });
         });
+        imageViewer.addPlugin(this);
     }
 
     private void jMenuItemDelete1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemDelete1ActionPerformed
         DefaultTreeModel model = (DefaultTreeModel) jTreeStudy.getModel();
         TreePath[] paths = jTreeStudy.getSelectionPaths();
-        for (TreePath path:paths){
+        for (TreePath path : paths) {
             Object obj = path.getLastPathComponent();
             if (obj == null) {
                 continue;
@@ -1073,7 +1135,8 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                     Logger.getLogger(SolutionManager.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 closeImage(imageManager.imageReference);
-                jTreeStudyModel.reload();
+//                jTreeStudyModel.reload();
+                jTreeStudy.updateUI();
             }
             if (obj instanceof ImageManagerSet) {
                 ImageManagerSet imageReferenceSet = (ImageManagerSet) obj;
@@ -1087,9 +1150,11 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                     }
                 });
                 model.removeNodeFromParent(imageReferenceSet);
-                jTreeStudyModel.reload();
+                jTreeStudy.updateUI();
+
+//                jTreeStudyModel.reload();
             }
-    }
+        }
         final ImageViewer sv = imageViewerLastSelected;
         if (sv != null) {
             sv.repaint();
@@ -1138,15 +1203,10 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                 }
             }
             toRemove.stream().forEach((folder) -> {
-                annoSet.remove(folder);
+                annoSet.remove(folder, false);
             });
         }
         saveSolution();
-        try {
-            Thread.sleep(600);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(AnnotationSet.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 
     private void jMenuItemClassRemoveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemClassRemoveActionPerformed
@@ -1219,8 +1279,8 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         Executors.newSingleThreadExecutor().submit(() -> {
             UIManager.put("ProgressBar[Enabled].foregroundPainter", new ProgressBarForegroundPainter());
             final AVM_ProgressMonitor pm = new AVM_ProgressMonitor(getThis(), "Generating training data", "", 0, 1000000);
-            pm.setMillisToDecideToPopup(500);
-            pm.setMillisToPopup(500);
+            pm.setMillisToDecideToPopup(50);
+            pm.setMillisToPopup(50);
             pm.setProgress(1);
             pm.setProgress(2);
             pm.setNote("Collecting image sources");
@@ -1231,9 +1291,9 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             numelSamples = SampleSetClass.numelSamples(imageSources, solutionSource);
             pm.setMaximum(numelSamples);
             pm.setNote("Generating Features");
-            ArrayList<SampleSetClass> samplesSets;
+            Instances instances;
             try {
-                samplesSets = SampleSetClass.generateTrainingSets(imageSources, solutionSource, pm);
+                instances = SampleSetClass.generateInstances(imageSources, solutionSource, pm);
             } catch (OutOfMemoryError ex) {
                 pm.close();
                 Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
@@ -1249,22 +1309,6 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                 closeImageSources(imageSources);
                 return;
             }
-
-            ArrayList<String> classNames = new ArrayList<>();
-            for (int i = 0; i < samplesSets.size(); i++) {
-                String name = samplesSets.get(i).className;
-                classNames.add(name);
-            }
-            ArrayList<String> featureNames = new ArrayList<>();
-            for (AbstractFeatureGenerator generator : solution.getFeatureGenerators()) {
-                if (generator.isactive) {
-                    String[] names = generator.getFeatureNames();
-                    for (String name : names) {
-                        featureNames.add(name);
-                    }
-                }
-            }
-            Instances instances = SamplesToInstances.convert(classNames, featureNames, samplesSets);
 
             pm.setNote("Saving to file " + exportFile.getName());
             try {
@@ -1286,18 +1330,18 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         });
     }//GEN-LAST:event_jMenuItemWekaExportTrainingDataActionPerformed
 
-    private void closeImageSources(ArrayList<ImageSource> imageSources){
-        for (ImageSource imageSource:imageSources){
+    private void closeImageSources(ArrayList<ImageSource> imageSources) {
+        for (ImageSource imageSource : imageSources) {
             imageSource.close();
         }
     }
-    
+
     private void jMenuItemCloneActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemCloneActionPerformed
         String cloneName = JOptionPane.showInputDialog("Enter the mame of the solution clone", solutionSource.getName() + "_Clone");
         if (cloneName != null) {
             try {
                 SolutionSource ss = solutionSource.cloneSolution(cloneName);
-                if (ss != null){
+                if (ss != null) {
                     SolutionManager sm = new SolutionManager(username, ss);
                     sm.setVisible(true);
                     AdvancedVirtualMicroscope.addWindow(sm, "Solution " + ss.getName());
@@ -1309,7 +1353,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
     }//GEN-LAST:event_jMenuItemCloneActionPerformed
 
     private void jMenuItemExportClassifierActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemExportClassifierActionPerformed
-        ClassifierInterface abstractClassifier = solution.getClassifier(ClassifierWeka.class.getCanonicalName());
+        ClassifierWeka abstractClassifier = solution.getClassifier(ClassifierWeka.class.getCanonicalName());
         if (abstractClassifier == null) {
             JOptionPane.showMessageDialog(this, "No Weka classifiers found", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -1352,7 +1396,10 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         }
         ClassifierWeka classifierWeka = new ClassifierWeka(classifier);
         classifierWeka.setActive(true);
+        classifierWeka.setValid(true);
         solution.setClassifier(classifierWeka);
+        saveSolution();
+        updateGenerateModelButton();
         JOptionPane.showMessageDialog(this, "Classifier imported", "Finished", JOptionPane.INFORMATION_MESSAGE);
     }//GEN-LAST:event_jMenuItemImportClassifierActionPerformed
 
@@ -1379,7 +1426,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             }
         }
         t.append("---Active classifiers\n");
-        for (ClassifierInterface c : solution.getClassifiers()) {
+        for (ClassifierWeka c : solution.getClassifiers()) {
             if (c.isActive()) {
                 t.append("   Name: " + c.toString() + "\n");
                 Date lastTrainded = c.getLastTrained();
@@ -1409,13 +1456,92 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
 
     }//GEN-LAST:event_jCheckBoxMenuItemRunOnServerActionPerformed
 
+    private void jButtonDistributionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonDistributionActionPerformed
+        // Setup Parameters
+        final ImageViewer imageViewer = imageViewerLastSelected;
+        if (imageViewer == null) {
+            return;
+        }
+        final ArrayList<ROI> selectedROIs = imageViewer.getROI_TreeTable().getSelectedROIs();
+        final ImageSource imageSource = imageViewer.getImageSource();
+        final Solution solutionHold = solution;
+        if (selectedROIs.isEmpty()) {
+            return;
+        }
+
+        Executors.newSingleThreadExecutor().submit(() -> {
+            try {
+                UIManager.put("ProgressBar[Enabled].foregroundPainter", new ProgressBarForegroundPainter());
+                AVM_ProgressMonitor pm = new AVM_ProgressMonitor(getThis(), "Preparing distribution for display", "Locating samples", 0, 1000000);
+                pm.setMillisToPopup(50);
+                pm.setMillisToDecideToPopup(50);
+                pm.setProgress(1);
+                pm.setProgress(2);
+                pm.setNote("Locating samples");
+                SampleSetImage sampleSetImage = new SampleSetImage(imageSource, selectedROIs, solutionHold, solutionSource);
+                sampleSetImage.setIsForTest(true);
+                pm.setProgress(3);
+                pm.setMaximum((int) (sampleSetImage.samples.size() * 1.5));
+                try {
+                    sampleSetImage.generateSampleFeatures(pm);
+                } catch (OutOfMemoryError ex) {
+                    pm.close();
+                    Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+                    JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(this), "Java heap space out of menory", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                } catch (Throwable ex) {
+                    pm.close();
+                    Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+                    JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(this), "Failed to generate features", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if (pm.isCanceled()) {
+                    return;
+                }
+                ArrayList<Sample> samples = sampleSetImage.samples;
+                if (samples == null) {
+                    if (!pm.isCanceled()) {
+                        JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(this), "Failed to generate features", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    for (ClassifierWeka classifier : solutionHold.getClassifiers()) {
+                        if (classifier.isActive() && classifier.isValid()) {
+                            classifier.distribution(samples, solution.getClassifierClassNames().size());
+                            Collection<String> classNames = solution.getClassifierClassNames().values();
+                            ClassifierDistribution cr = new ClassifierDistribution(classifier.getName(), imageViewer, samples, classNames.toArray(new String[classNames.size()]), "Overlay #" + String.valueOf(overlayIdx++));
+                            imageViewer.addPlugin(cr);
+                        }
+                    }
+                    pm.close();
+                }
+                pm.close();
+            } catch (Exception ex) {
+                Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+    }//GEN-LAST:event_jButtonDistributionActionPerformed
+
+    private void jMenuItemExportAllROIsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemExportAllROIsActionPerformed
+        new ExportDialogROIsFullStudy(this, true, studySource).setVisible(true);
+    }//GEN-LAST:event_jMenuItemExportAllROIsActionPerformed
+
+    private void jMenuItemRemoveUnusedImagesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemRemoveUnusedImagesActionPerformed
+        ArrayList<ImageReference> imagesRemoved = studySource.removeUnusedImages();
+        for (ImageReference imageRemoved : imagesRemoved) {
+            closeImage(imageRemoved);
+        }
+        jTreeStudy.repaint();
+    }//GEN-LAST:event_jMenuItemRemoveUnusedImagesActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonClassify;
+    private javax.swing.JButton jButtonDistribution;
     private javax.swing.JButton jButtonViewFeatures;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItemRunOnServer;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenu jMenu3;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenu jMenuClassifier;
     private javax.swing.JMenuItem jMenuItemAddImages;
@@ -1425,10 +1551,12 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
     private javax.swing.JMenuItem jMenuItemClone;
     private javax.swing.JMenuItem jMenuItemDelete;
     private javax.swing.JMenuItem jMenuItemDelete1;
+    private javax.swing.JMenuItem jMenuItemExportAllROIs;
     private javax.swing.JMenuItem jMenuItemExportClassifier;
     private javax.swing.JMenuItem jMenuItemGenerateModel;
     private javax.swing.JMenuItem jMenuItemImportClassifier;
     private javax.swing.JMenuItem jMenuItemInfo;
+    private javax.swing.JMenuItem jMenuItemRemoveUnusedImages;
     private javax.swing.JMenuItem jMenuItemSetupModel;
     private javax.swing.JMenuItem jMenuItemWekaExportTrainingData;
     private javax.swing.JMenu jMenuOptions;
@@ -1528,44 +1656,53 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             }
         });
     }
-    
-    private class My_SpinnerListModel extends SpinnerListModel{
+
+    @Override
+    public void close() {
+    }
+
+    private class My_SpinnerListModel extends SpinnerListModel {
+
         private final ArrayList<Integer> spinnerValues;
+
         public My_SpinnerListModel(ArrayList<Integer> values) {
             super(values);
             Collections.sort(values);
             this.spinnerValues = values;
         }
+
         @Override
         public void setValue(Object elt) {
             int i = 0;
-            if (elt instanceof Integer){
-                i = ((Integer)elt).intValue();
-            } else if (elt instanceof String){
+            if (elt instanceof Integer) {
+                i = ((Integer) elt).intValue();
+            } else if (elt instanceof String) {
                 i = Integer.parseInt((String) elt);
-            } 
-            for (int j = spinnerValues.size()-1; j > 0; j--){
+            }
+            for (int j = spinnerValues.size() - 1; j > 0; j--) {
                 int k = spinnerValues.get(j);
-                if (k <= i){
-                    super.setValue(k); 
+                if (k <= i) {
+                    super.setValue(k);
                     return;
                 }
             }
-            super.setValue(spinnerValues.get(0)); 
+            super.setValue(spinnerValues.get(0));
             return;
-        }        
+        }
     }
-    
+
     public void showAddImagesPrompt() {
         final SearchableSelector imageSelector = new SearchableSelector("Select Image", "Add") {
             @Override
             public void doubleClicked(ArrayList<AVM_Source> selected) {
                 selected(selected);
             }
+
             @Override
             public void buttonPressed(ArrayList<AVM_Source> selected) {
                 selected(selected);
             }
+
             public void selected(ArrayList<AVM_Source> sources) {
                 ArrayList<ImageManager> existingImageManagers = studySource.getAllImageManagers();
                 ArrayList<ImageManager> imageManagersAdded = new ArrayList<>();
@@ -1583,16 +1720,18 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                         }
                     }
                 }
-                jTreeStudyModel.reload();
+//                jTreeStudyModel.reload();
+                jTreeStudy.updateUI();
                 jTreeStudy.setExpandsSelectedPaths(true);
                 ArrayList<TreePath> paths = new ArrayList<>();
-                for (ImageManager imageManager:imageManagersAdded){
+                for (ImageManager imageManager : imageManagersAdded) {
                     TreePath path = new TreePath(jTreeStudyModel.getPathToRoot(imageManager));
                     paths.add(path);
                     jTreeStudy.expandPath(path.getParentPath());
                 }
                 jTreeStudy.setSelectionPaths(paths.toArray(new TreePath[paths.size()]));
             }
+
             @Override
             public ArrayList<AVM_Source> getSelectables() {
                 ArrayList<AVM_Source> selectables = new ArrayList<>();
@@ -1609,5 +1748,5 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         imageSelector.setTitle("Select images to add");
         imageSelector.setVisible(true);
     }
-    
+
 }

@@ -399,6 +399,8 @@ public class LoginDialog extends javax.swing.JDialog {
 
     private int loginToServer(){
         String url = getServerURL();;
+        AVM_Properties.setProperty(AVM_Properties.AUTO_LOGIN_SERVER_KEY,url);
+        
         String username = getUsername();
         String password = getPassword();
         try {
@@ -514,6 +516,15 @@ public class LoginDialog extends javax.swing.JDialog {
         int result = -1;
         switch (AVM_Properties.getProperty(AVM_Properties.AUTO_LOGIN_DESTINATION_KEY)){
             case "server":
+                String serverURL = AVM_Properties.getProperty(AVM_Properties.AUTO_LOGIN_SERVER_KEY);
+                if (serverURL == null){
+                    return -3;
+                }
+                jComboBoxServerURL.setSelectedItem(serverURL);
+                if (!jComboBoxServerURL.getSelectedItem().equals(serverURL)){
+                    addServerURL(serverURL);
+                    jComboBoxServerURL.setSelectedItem(serverURL);
+                }
                 result = loginToServer();
                 break;
             case "database":

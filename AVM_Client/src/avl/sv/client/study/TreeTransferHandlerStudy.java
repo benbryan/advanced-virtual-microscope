@@ -3,6 +3,7 @@
  */
 package avl.sv.client.study;
 
+import avl.sv.shared.MessageStrings;
 import avl.sv.shared.study.ROI_Folder;
 import avl.sv.shared.study.AnnotationSet;
 import avl.sv.shared.study.ROI;
@@ -201,7 +202,11 @@ public class TreeTransferHandlerStudy extends TransferHandler {
                         if ((o1 instanceof ROI_Folder) && (o2 instanceof ROI)){
                             ROI_Folder folder = (ROI_Folder) o1;
                             ROI roi = (ROI) o2;
-                            folder.remove(roi, false);
+                            if (folder.toString().equals(MessageStrings.Temporary)) {
+                                model.removeNodeFromParent(roi);
+                            } else {
+                                folder.remove(roi, false);
+                            }
                         }
                     }
                     if (path.length == 2){
@@ -210,7 +215,11 @@ public class TreeTransferHandlerStudy extends TransferHandler {
                         if ((o0 instanceof AnnotationSet) && (o1 instanceof ROI_Folder)){
                             AnnotationSet annoSet =  (AnnotationSet) o0;
                             ROI_Folder folder =  (ROI_Folder) o1;
-                            annoSet.remove(folder, false);
+                            if (folder.toString().equals(MessageStrings.Temporary)) {
+                                model.removeNodeFromParent(folder);
+                            } else {
+                                annoSet.remove(folder, false);
+                            }
                         }
                     }
                 }

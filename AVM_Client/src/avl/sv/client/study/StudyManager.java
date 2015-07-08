@@ -97,16 +97,6 @@ public class StudyManager extends javax.swing.JFrame {
                 });
             }
         });
-//        studySource.addStudyChangeListener(new StudyChangeListener() {
-//            @Override
-//            public void studyChanged(StudyChangeEvent event) {
-//                for (ImageViewer imageViewer:imageViewers.keySet()){
-//                    if (imageViewer.getImageSource().imageReference.equals(event.imageReference)){
-//                        imageViewer.repaint();
-//                    }
-//                }
-//            }
-//        });
     }
 
     private void openImage(final ImageManager imageManager) {
@@ -162,7 +152,6 @@ public class StudyManager extends javax.swing.JFrame {
         jMenu2 = new javax.swing.JMenu();
         jMenuItemRemoveUnusedImages = new javax.swing.JMenuItem();
         jMenuItemExportAllROIs = new javax.swing.JMenuItem();
-        jMenuItemReferenceImage = new javax.swing.JMenuItem();
 
         jPopupMenuJTree.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
             public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
@@ -279,14 +268,6 @@ public class StudyManager extends javax.swing.JFrame {
         });
         jMenu2.add(jMenuItemExportAllROIs);
 
-        jMenuItemReferenceImage.setText("Locate Image");
-        jMenuItemReferenceImage.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItemReferenceImageActionPerformed(evt);
-            }
-        });
-        jMenu2.add(jMenuItemReferenceImage);
-
         jMenuBar1.add(jMenu2);
 
         setJMenuBar(jMenuBar1);
@@ -315,8 +296,7 @@ public class StudyManager extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel6)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
-                .addGap(29, 29, 29))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 170, Short.MAX_VALUE))
         );
 
         pack();
@@ -420,13 +400,11 @@ public class StudyManager extends javax.swing.JFrame {
                 if (obj instanceof ImageManagerSet) {
                     ImageManagerSet imageManagerSet = (ImageManagerSet) obj;
                     for (ImageManager imageManager : imageManagerSet.getImageManagerSet()) {
-
                         StudySource ss = (StudySource) imageManager.getParent().getParent();
                         closeImage(imageManager.imageReference);
                         ss.removeImage(imageManager.imageReference);
 
                     }
-                    jTreeStudyModel.removeNodeFromParent(imageManagerSet);
                     jTreeStudy.updateUI();
                 }
             }
@@ -440,19 +418,6 @@ public class StudyManager extends javax.swing.JFrame {
         }
 
     }//GEN-LAST:event_jMenuItemDeleteImageActionPerformed
-
-    private void closeImage(ImageReference imageReference) {
-        ArrayList<ImageViewer> toClose = new ArrayList<>();
-        for (Map.Entry<ImageViewer, JFrame> entry : imageViewers.entrySet()) {
-            ImageViewer imageViewer = entry.getKey();
-            if (imageViewer.getImageSource().imageReference.equals(imageReference)) {
-                toClose.add(imageViewer);
-            }
-        }
-        for (ImageViewer imageViewer : toClose) {
-            imageViewers.remove(imageViewer).dispose();
-        };
-    }
 
     private void jMenuItemOpenImageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemOpenImageActionPerformed
         TreePath[] paths = jTreeStudy.getSelectionPaths();
@@ -494,7 +459,7 @@ public class StudyManager extends javax.swing.JFrame {
     private void jMenuItemCloneStudyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemCloneStudyActionPerformed
         String result = JOptionPane.showInputDialog("Input cloned study's name", studySource.getName() + "_clone");
         if (result != null) {
-            StudySource ss = studySource.cloneStudy(result, null);
+            StudySource ss = studySource.cloneStudy(result);
             if (ss != null) {
                 StudyManager sm = new StudyManager(username, ss);
                 AdvancedVirtualMicroscope.addWindow(sm, "Study " + sm.getName());
@@ -505,13 +470,15 @@ public class StudyManager extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jMenuItemCloneStudyActionPerformed
 
-    private void closeImageViewer(ImageReference imageReference) {
+    private void closeImage(ImageReference imageReference) {
         for (Map.Entry<ImageViewer, JFrame> entry : imageViewers.entrySet()) {
             ImageViewer imageViewer = entry.getKey();
-            JFrame f = entry.getValue();
             if (imageViewer.getImageSource().imageReference.equals(imageReference)) {
+                imageViewers.remove(imageViewer).dispose();
                 imageViewer.close();
+                JFrame f = entry.getValue();
                 f.dispose();
+                jTreeStudy.updateUI();
                 return;
             }
         }
@@ -520,7 +487,7 @@ public class StudyManager extends javax.swing.JFrame {
     private void jMenuItemRemoveUnusedImagesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemRemoveUnusedImagesActionPerformed
         ArrayList<ImageReference> imagesRemoved = studySource.removeUnusedImages();
         for (ImageReference imageRemoved:imagesRemoved){
-            closeImageViewer(imageRemoved);
+            closeImage(imageRemoved);
         }
         jTreeStudy.repaint();
     }//GEN-LAST:event_jMenuItemRemoveUnusedImagesActionPerformed
@@ -528,11 +495,6 @@ public class StudyManager extends javax.swing.JFrame {
     private void jMenuItemExportAllROIsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemExportAllROIsActionPerformed
         new ExportDialogROIsFullStudy(this, true, studySource).setVisible(true);
     }//GEN-LAST:event_jMenuItemExportAllROIsActionPerformed
-
-    private void jMenuItemReferenceImageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemReferenceImageActionPerformed
-//        ImageSource imageSource;
-//        imageSource.exportROI(null, null, TOP_ALIGNMENT)
-    }//GEN-LAST:event_jMenuItemReferenceImageActionPerformed
 
     private void jTextAreaStudyDescriptionKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextAreaStudyDescriptionKeyTyped
         try {
@@ -569,7 +531,6 @@ public class StudyManager extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItemDeleteStudy;
     private javax.swing.JMenuItem jMenuItemExportAllROIs;
     private javax.swing.JMenuItem jMenuItemOpenImage;
-    private javax.swing.JMenuItem jMenuItemReferenceImage;
     private javax.swing.JMenuItem jMenuItemRemoveUnusedImages;
     private javax.swing.JPopupMenu jPopupMenuJTree;
     private javax.swing.JScrollPane jScrollPane1;

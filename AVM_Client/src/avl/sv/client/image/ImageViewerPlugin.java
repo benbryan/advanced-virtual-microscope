@@ -5,6 +5,6 @@ import java.awt.event.WindowAdapter;
 
 public interface ImageViewerPlugin {
     public void paintPlugin(ImageViewer imageViewer, Graphics g);
-    public void dispose();
+    public void close();
     public void addImageViewerPluginListener(ImageViewerPluginListener imageViewerPluginListener);
 }

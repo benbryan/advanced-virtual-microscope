@@ -9,6 +9,7 @@ import avl.sv.shared.image.ImageReference;
 import avl.sv.shared.study.ROI_Folder;
 import avl.sv.shared.study.ROI;
 import avl.sv.shared.image.ImageSourceFile;
+import avl.sv.shared.solution.Solution;
 import avl.sv.shared.study.AnnotationSet;
 import avl.sv.shared.study.StudySource;
 import java.awt.Color;
@@ -23,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -69,7 +71,7 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
             setAllComponentsEnabled(this, false);
         }
         
-        jTextFieldStudyName.setText(studySource.getName());
+        jTextFieldSolutionName.setText(solutionManager.getSolutionSource().getName());
         imageViewer.addMouseMotionListener(this);
 
         if (!canModify) {
@@ -183,7 +185,6 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
                     export.addActionListener(new AbstractAction() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-
                             int[] rows = jXTreeTableROIs.getSelectedRows();
                             Object objs[] = new Object[rows.length];
                             for (int i = 0; i < rows.length; i++) {
@@ -250,6 +251,8 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
             public void run() {
                 try {
                     TreeTableModelStudy annoSetModel = studySource.getAnnotationSetModel(imageReference);
+                    Solution solution = solutionManager.getSolutionSource().getSolution();
+                    HashMap<Long, String> classifierClassNames = solution.getClassifierClassNames();
                     jXTreeTableROIs.setModel(annoSetModel);
                     AnnotationSet annoSet = annoSetModel.getAnnotationSet();
                     if (annoSet == null) {
@@ -257,9 +260,9 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
                         throw new NullPointerException("Failed to get annotationSet");
                     }
                     ArrayList<ROI_Folder> classFoldersFound = new ArrayList<>();
-                    
+
                     // Make sure class folders exist in the annotationSet
-                    for (Map.Entry<Long, String> classEntry : solutionManager.getSolutionSource().getSolution().getClassifierClassNames().entrySet()) {
+                    for (Map.Entry<Long, String> classEntry : classifierClassNames.entrySet()) {
                         ROI_Folder foundFolder = null;
                         for (ROI_Folder folder : annoSet.getROI_Folders()) {
                             if (folder.id == classEntry.getKey()) {
@@ -291,7 +294,7 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
                         if (folder.getName().equals(MessageStrings.Temporary)){
                             continue;
                         }
-                        for (Long classKey:solutionManager.getSolutionSource().getSolution().getClassifierClassNames().keySet()){
+                        for (Long classKey:classifierClassNames.keySet()){
                             if (classKey.longValue() == folder.id){
                                 classIdFound = true;
                                 break;
@@ -321,7 +324,7 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
                     if (tempFolder == null) {
                         tempFolder = ROI_Folder.createDefault();
                         tempFolder.setName(MessageStrings.Temporary, true);
-                        annoSetModel.insertNodeInto(tempFolder, annoSet, annoSetModel.getChildCount(annoSet));
+                        annoSetModel.insertNodeInto(tempFolder, annoSet, 0);
                     }
                     
                     jXTreeTableROIs.lastSelectedROI_Folder = tempFolder;
@@ -344,7 +347,7 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
     private void initComponents() {
 
         jLabel1 = new javax.swing.JLabel();
-        jTextFieldStudyName = new javax.swing.JTextField();
+        jTextFieldSolutionName = new javax.swing.JTextField();
         jPanelAddRoi = new javax.swing.JPanel();
         jCheckBoxRegionHighlight = new javax.swing.JCheckBox();
         jCheckBoxShowSelectedMarkers = new javax.swing.JCheckBox();
@@ -370,7 +373,7 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
 
         jLabel1.setText("Solution name: ");
 
-        jTextFieldStudyName.setEditable(false);
+        jTextFieldSolutionName.setEditable(false);
 
         jCheckBoxRegionHighlight.setSelected(true);
         jCheckBoxRegionHighlight.setText("Region Highlight");
@@ -478,7 +481,7 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jTextFieldStudyName)
+                        .addComponent(jTextFieldSolutionName)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jToggleButtonVisablePin, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jPanelAddRoi, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -489,7 +492,7 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jTextFieldStudyName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jTextFieldSolutionName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addComponent(jLabel1))
                     .addComponent(jToggleButtonVisablePin, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -554,7 +557,7 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanelAddRoi;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextField jTextFieldStudyName;
+    private javax.swing.JTextField jTextFieldSolutionName;
     private javax.swing.JToggleButton jToggleButtonVisablePin;
     private avl.sv.client.solution.ROI_TreeTable_Solution jXTreeTableROIs;
     // End of variables declaration//GEN-END:variables

@@ -33,16 +33,23 @@ public class AdvancedVirtualMicroscope extends javax.swing.JFrame {
     private static Log logFrame;
     private static ArrayList<Window> windows = new ArrayList<>();
 
-    private JMenuItem jMenuItemLogin = new JMenuItem(new AbstractAction("Login") {
+    private static JMenuItem jMenuItemLogin = new JMenuItem(new AbstractAction("Login") {
         @Override
         public void actionPerformed(ActionEvent e) {
-
+            jMenuOptions.add(jMenuItemLogout);
+            jMenuOptions.remove(jMenuItemLogin);
+            loginDialog.setVisible(true);
         }
     });
-    private JMenuItem jMenuItemLogout = new JMenuItem(new AbstractAction("Logout") {
+    private static JMenuItem jMenuItemLogout = new JMenuItem(new AbstractAction("Logout") {
         @Override
         public void actionPerformed(ActionEvent e) {
-
+            jMenuOptions.add(jMenuItemLogin);
+            jMenuOptions.remove(jMenuItemLogout);
+            jMenuFile.removeAll();
+            for (Window window:windows){
+                window.dispose();
+            }
         }
     });
     
@@ -65,7 +72,8 @@ public class AdvancedVirtualMicroscope extends javax.swing.JFrame {
             if (0==loginDialog.autologin()){
                 jMenuOptions.add(jMenuItemLogout);
             } else {
-                loginDialog.setVisible(true);                
+                jMenuOptions.add(jMenuItemLogin);
+                loginDialog.setVisible(true);     
             }            
         });
         pack(); 
@@ -174,7 +182,9 @@ public class AdvancedVirtualMicroscope extends javax.swing.JFrame {
         for (Window window : windows) {
             if (window instanceof ImageViewerJFrame) {
                 ImageViewerJFrame imageViewerJFrame = (ImageViewerJFrame) window;
-                imageViewerJFrame.dispose();
+                if (imageViewerJFrame.getImageViewer().equals(imageViewer)){
+                    imageViewerJFrame.dispose();
+                }
             }
         }
     }

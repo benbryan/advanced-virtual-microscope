@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 public class PluginSolution implements AVM_Plugin {
@@ -119,7 +120,12 @@ public class PluginSolution implements AVM_Plugin {
 
                                 @Override
                                 public Permissions getPermissions(String username) {
-                                    return solutionSource.getPermissions(username);
+                                    try {
+                                        return solutionSource.getPermissions(username);
+                                    } catch (PermissionDenied ex) {
+                                        JOptionPane.showMessageDialog(rootPane, MessageStrings.PERMISSION_DENIED);
+                                        return null;
+                                    }
                                 }
                             }.setVisible(true);
                         }
