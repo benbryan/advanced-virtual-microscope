@@ -10,20 +10,38 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AVM_Properties {
-    public static final String UPLOAD_SESSION_TIMEOUT_MINUTES = "upload_session_timeout_minutes";
-    public static final String AUTO_LOGIN_PASSWORD_KEY = "auto_login_password";
-    public static final String USERNAME_KEY = "username";
-    public static String SERVER_URL_BASE_KEY = "server_url_";
-    public static String DATABASE_HOSTS_KEY = "database_hosts";
-    public static String DATABASE_NAME_KEY = "database_name";
-    public static String AUTO_LOGIN_DESTINATION_KEY = "auto_login_destination";
-    public static String AUTO_LOGIN_SERVER_KEY = "auto_login_server";
+    
+    public enum Name {
+     upload_session_timeout_minutes,
+     auto_login_password,
+     username,
+     server_url_,
+     database_hosts,
+     database_name,
+     auto_login_destination,
+     auto_login_server,
+     CL_platform_Index,
+     CL_device_Index
+    }
         
+    private static File propertiesFile = null;
+    
+    private static AVM_Properties instance = null;
+    public static AVM_Properties getInstance(){
+        if (instance == null){
+            instance = new AVM_Properties();
+            propertiesFile = getPropertiesFile();
+        }
+        return instance;
+    }
+    
     private static Properties getDefaultProperties(){
         Properties p = new Properties();
-        p.setProperty(DATABASE_HOSTS_KEY, "localhost:5000");
-        p.setProperty(DATABASE_NAME_KEY, "kvstore");
-        p.setProperty(UPLOAD_SESSION_TIMEOUT_MINUTES, "120");
+        p.setProperty(Name.database_hosts.name(), "localhost:5000");
+        p.setProperty(Name.database_name.name(), "kvstore");
+        p.setProperty(Name.upload_session_timeout_minutes.name(), "120");
+        p.setProperty(Name.CL_platform_Index.name(), "0");
+        p.setProperty(Name.CL_device_Index.name(), "0");
         return p;
     }
         
@@ -61,6 +79,9 @@ public class AVM_Properties {
     }
 
     public static File getPropertiesFile() {
+        if (propertiesFile != null){
+            return propertiesFile;
+        }
         File f = new File(defaultDirectory() + File.separator + "AVM");
         if (!f.exists()){
             f.mkdirs();
@@ -77,6 +98,10 @@ public class AVM_Properties {
         return f;
     }
     
+    public static String getProperty(Name name){
+        return getProperty(name.name());
+    }
+    
     public static String getProperty(String key){
         Properties p = getProperties();
         String s = p.getProperty(key);
@@ -91,6 +116,9 @@ public class AVM_Properties {
         return s;
     }
     
+    public static void setProperty(Name name, String value){
+        setProperty(name.name(), value);
+    }    
     public static void setProperty(String key, String value){
         Properties p = getProperties();
         p.setProperty(key, value);

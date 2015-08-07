@@ -22,7 +22,6 @@ import javax.websocket.server.ServerEndpoint;
 @ServerEndpoint(value = "/StudyPort/ChangeMonitor/{sessionID}/{studyID}", encoders = StudyChangeEvent_XML_Writer.class, decoders = StudyChangeEvent_XML_Parser.class)
 public class StudyPortChangeMonitor {   
     
-    
     private avl.sv.shared.AVM_Session getSession(String sessionID){
         return SessionManagerServer.getInstance().getSession(sessionID);
     }

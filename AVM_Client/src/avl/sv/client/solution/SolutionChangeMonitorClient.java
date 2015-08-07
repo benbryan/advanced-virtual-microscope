@@ -1,9 +1,13 @@
 package avl.sv.client.solution;
 
+import avl.sv.shared.AVM_ProgressMonitor;
 import avl.sv.shared.solution.SolutionChangeEvent;
 import avl.sv.shared.solution.xml.SolutionChangeEvent_XML_Parser;
 import avl.sv.shared.solution.SolutionChangeListener;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.Date;
@@ -20,8 +24,10 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.PongMessage;
 import javax.websocket.Session;
+import javax.xml.parsers.ParserConfigurationException;
+import org.xml.sax.SAXException;
 
-@ClientEndpoint(decoders = SolutionChangeEvent_XML_Parser.class, encoders = {})
+@ClientEndpoint(decoders = {}, encoders = {})
 public class SolutionChangeMonitorClient {
 
     SolutionChangeListener listener;
@@ -31,12 +37,24 @@ public class SolutionChangeMonitorClient {
     public SolutionChangeMonitorClient(SolutionChangeListener listener) {
         this.listener = listener;
     }
-
-    @OnMessage
-    public void onMessage(SolutionChangeEvent event) {
-        listener.solutionChanged(event);
-    }
     
+    @OnMessage
+    public void onMessage(Session session, InputStream inputStream){
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+            int count = 0;
+            char b[] = new char[1024];
+            StringBuilder sb = new StringBuilder();
+            while((count=br.read(b))>0){
+                sb.append(b,0,count);
+            }
+            SolutionChangeEvent event = SolutionChangeEvent_XML_Parser.parse(sb.toString());
+            listener.solutionChanged(event);
+        } catch (IOException | ParserConfigurationException | SAXException ex) {
+            Logger.getLogger(SolutionChangeMonitorClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     @OnError
     public void onError(Session session, Throwable t) {
         Logger.getLogger(SolutionChangeMonitorClient.class.getName()).log(Level.WARNING, null, t);

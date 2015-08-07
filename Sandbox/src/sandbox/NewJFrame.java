@@ -6,8 +6,10 @@ import avl.sv.shared.study.ROIOval;
 import avl.sv.shared.study.ROIRectangle;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
@@ -113,42 +115,50 @@ public class NewJFrame extends javax.swing.JFrame {
     long imageDimX = 1000, imageDimY = 500;  
 
     private void mkImg(ArrayList<ROI> rois, double tileDim, double windowDim) throws Throwable{
-//        int tilesX = (int) Math.floor((double) imageDimX / tileDim);
-//        int tilesY = (int) Math.floor((double) imageDimY / tileDim);
-//        BufferedImage tileRep = new BufferedImage(tilesX, tilesY, BufferedImage.TYPE_BYTE_GRAY);
-//        Graphics2D g = (Graphics2D) tileRep.getGraphics();
-//        AffineTransform at = new AffineTransform();
-//        at.scale(1 / tileDim, 1 / tileDim);
-//        g.setTransform(at);
-//        g.setColor(Color.white);
-//        for (ROI roi : rois) {
-//            Shape s = roi.getShape();
+        int tilesX = (int) Math.floor((double) imageDimX / tileDim);
+        int tilesY = (int) Math.floor((double) imageDimY / tileDim);
+        BufferedImage tileRep = new BufferedImage(tilesX, tilesY, BufferedImage.TYPE_BYTE_GRAY);
+        Graphics2D g = (Graphics2D) tileRep.getGraphics();
+        AffineTransform at = new AffineTransform();
+        at.scale(1 / tileDim, 1 / tileDim);
+        g.setTransform(at);
+
+        for (ROI roi : rois) {
+            Shape s = roi.getShape();
+            g.setColor(Color.WHITE);
 //            g.setClip(s);
-//            g.fill(s);
-//        }
-//        setSize(tilesX*10, tilesY*10);
-//        img = tileRep;
-//        
-//        // First try to locate samples from a grid layout
-//        WritableRaster raster = tileRep.getRaster();
-//        for (int x = 0; x < tilesX - 1; x++ ) {
-//            for (int y = 0; y < tilesY - 1; y++ ) {
-//                byte b[] = (byte[]) raster.getDataElements(x, y, null);
-//                if (b[0] != 0) {
-//                    int offset = ((int) windowDim - (int) tileDim) / 2;
-//                    Rectangle tile = new Rectangle( ((int) (x / 1 * tileDim)), 
-//                                                    ((int) (y / 1 * tileDim)), 
-//                                                    (int) tileDim, 
-//                                                    (int) tileDim);
-//                    Rectangle window = new Rectangle(   ((int) (x / 1 * tileDim)) - offset, 
-//                                                        ((int) (y / 1 * tileDim)) - offset, 
-//                                                        (int) windowDim, 
-//                                                        (int) windowDim);
-//                    samples.add(new Sample(tile, window));
-//                }
-//            }
-//        }
-        // If not that many samples were found, try shifting the sample locations off the grid
+            g.fill(s);
+            g.setColor(Color.BLACK);
+            g.draw(s);
+        }
+        setSize(tilesX*10, tilesY*10);
+        img = tileRep;
+        
+        // First try to locate samples from a grid layout
+        WritableRaster raster = tileRep.getRaster();
+        for (int x = 0; x < tilesX - 1; x++ ) {
+            for (int y = 0; y < tilesY - 1; y++ ) {
+                byte b[] = (byte[]) raster.getDataElements(x, y, null);
+                if (b[0] != 0) {
+                    int offset = ((int) windowDim - (int) tileDim) / 2;
+                    Rectangle tile = new Rectangle( ((int) (x / 1 * tileDim)), 
+                                                    ((int) (y / 1 * tileDim)), 
+                                                    (int) tileDim, 
+                                                    (int) tileDim);
+                    Rectangle window = new Rectangle(   ((int) (x / 1 * tileDim)) - offset, 
+                                                        ((int) (y / 1 * tileDim)) - offset, 
+                                                        (int) windowDim, 
+                                                        (int) windowDim);
+                    samples.add(new Sample(tile, window));
+                }
+            }
+        }
+        System.out.println(String.valueOf(samples.size()));
+        
+//         If not that many samples were found, try shifting the sample locations off the grid
+        if (true){
+            return;
+        }
         
         if (samples.size() < 10) {
             nonGridSampling = true;
@@ -225,12 +235,12 @@ public class NewJFrame extends javax.swing.JFrame {
     public NewJFrame() throws Throwable {
         initComponents();     
         Executors.newSingleThreadExecutor().submit(()->{
-            double tileDim = 11, windowDim = 11;
+            double tileDim = 10, windowDim = 10;
 
             for (int i = 0; i < 1; i++){
                 ArrayList<ROI> rois = new ArrayList<>();
                 ROIRectangle rect = ROIRectangle.getDefault();
-                rect.setRectangle(new Rectangle(110+i, 110, 110, 110));
+                rect.setRectangle(new Rectangle(100+i, 100, 18, 8));
                 rois.add(rect);
                 try {
                     //                ROIOval oval = ROIOval.getDefault();

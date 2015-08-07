@@ -14,5 +14,6 @@ public class MessageStrings {
     public static final String TileDimTooSmallForDatabase = "TileDim is to small to store features in database";
     public static final String Temporary = "Temporary";
     public static final String NEW_FOLDER = "New Folder";
+    public static final String NO_SUCH_PROGRESS_MONITOR = ERROR + "No such progress monitor";
 
 }

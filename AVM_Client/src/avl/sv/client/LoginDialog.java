@@ -36,19 +36,19 @@ public class LoginDialog extends javax.swing.JDialog {
         jPasswordFieldPassword0.setText("");
         jCheckBoxAutoLogin.setSelected(isAutoLoginEnabled());
         
-        String databaseURL = AVM_Properties.getProperty(AVM_Properties.DATABASE_HOSTS_KEY);
+        String databaseURL = AVM_Properties.getProperty(AVM_Properties.Name.database_hosts);
         if (databaseURL != null) {
             jTextFieldDatabaseHosts.setText(databaseURL);
         } else {
             jTextFieldDatabaseHosts.setText("");
         }
-        String databaseName = AVM_Properties.getProperty(AVM_Properties.DATABASE_NAME_KEY);
+        String databaseName = AVM_Properties.getProperty(AVM_Properties.Name.database_name);
         if (databaseName != null) {
             jTextFieldDatabaseName.setText(databaseName);
         } else {
             jTextFieldDatabaseName.setText("");
         }
-        String username = AVM_Properties.getProperty(AVM_Properties.USERNAME_KEY);
+        String username = AVM_Properties.getProperty(AVM_Properties.Name.username);
         if (username != null) {
             jTextFieldUsername.setText(username);
         } else {
@@ -66,7 +66,7 @@ public class LoginDialog extends javax.swing.JDialog {
     }
 
     public boolean isAutoLoginEnabled(){
-        String autoDestination = AVM_Properties.getProperty(AVM_Properties.AUTO_LOGIN_DESTINATION_KEY);
+        String autoDestination = AVM_Properties.getProperty(AVM_Properties.Name.auto_login_destination);
         return ((autoDestination != null) && (!autoDestination.isEmpty()));
     }
     
@@ -371,7 +371,7 @@ public class LoginDialog extends javax.swing.JDialog {
                     } else {
                         isCanceled = false;
                         setVisible(false);
-                        JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(this), "User account created");
+                        JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(this), "User account created");
                         AdvancedVirtualMicroscope.setStatusText("User account created", 5 * 1000);
                     }
                 }
@@ -399,7 +399,7 @@ public class LoginDialog extends javax.swing.JDialog {
 
     private int loginToServer(){
         String url = getServerURL();;
-        AVM_Properties.setProperty(AVM_Properties.AUTO_LOGIN_SERVER_KEY,url);
+        AVM_Properties.setProperty(AVM_Properties.Name.auto_login_server, url);
         
         String username = getUsername();
         String password = getPassword();
@@ -415,7 +415,7 @@ public class LoginDialog extends javax.swing.JDialog {
             setStatusText("Failed to connect server at: " + url, 0);
             Logger.getLogger(getClass().getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        AVM_Properties.setProperty(AVM_Properties.USERNAME_KEY, jTextFieldUsername.getText());
+        AVM_Properties.setProperty(AVM_Properties.Name.username, jTextFieldUsername.getText());
         return 0;
     }
     
@@ -511,12 +511,12 @@ public class LoginDialog extends javax.swing.JDialog {
         if (!isAutoLoginEnabled()){
             return -2;
         }
-        String autologinPassword = AVM_Properties.getProperty(AVM_Properties.AUTO_LOGIN_PASSWORD_KEY);
+        String autologinPassword = AVM_Properties.getProperty(AVM_Properties.Name.auto_login_password);
         jPasswordFieldPassword0.setText(autologinPassword);
         int result = -1;
-        switch (AVM_Properties.getProperty(AVM_Properties.AUTO_LOGIN_DESTINATION_KEY)){
+        switch (AVM_Properties.getProperty(AVM_Properties.Name.auto_login_destination)){
             case "server":
-                String serverURL = AVM_Properties.getProperty(AVM_Properties.AUTO_LOGIN_SERVER_KEY);
+                String serverURL = AVM_Properties.getProperty(AVM_Properties.Name.auto_login_server);
                 if (serverURL == null){
                     return -3;
                 }
@@ -542,8 +542,8 @@ public class LoginDialog extends javax.swing.JDialog {
     }
     
     public void setAutoLogin(String destination){
-        AVM_Properties.setProperty(AVM_Properties.AUTO_LOGIN_DESTINATION_KEY, destination);
-        AVM_Properties.setProperty(AVM_Properties.AUTO_LOGIN_PASSWORD_KEY, getPassword());
+        AVM_Properties.setProperty(AVM_Properties.Name.auto_login_destination, destination);
+        AVM_Properties.setProperty(AVM_Properties.Name.auto_login_password, getPassword());
     }
 
     private int loginToDatabase() {
@@ -552,8 +552,8 @@ public class LoginDialog extends javax.swing.JDialog {
         String username = getUsername();
         String password = getPassword();
 
-        AVM_Properties.setProperty(AVM_Properties.DATABASE_HOSTS_KEY, hosts);
-        AVM_Properties.setProperty(AVM_Properties.DATABASE_NAME_KEY, name);
+        AVM_Properties.setProperty(AVM_Properties.Name.database_hosts, hosts);
+        AVM_Properties.setProperty(AVM_Properties.Name.database_name, name);
         
         if (null == KVStoreRef.getRef()){
             String str = "Failed to connect to the database";
@@ -576,13 +576,13 @@ public class LoginDialog extends javax.swing.JDialog {
         AdvancedVirtualMicroscope.setStatusText("Logged into database", 4 * 1000);
         AdvancedVirtualMicroscope.setUsername(username);
 
-        AVM_Properties.setProperty(AVM_Properties.USERNAME_KEY, jTextFieldUsername.getText());
+        AVM_Properties.setProperty(AVM_Properties.Name.username, jTextFieldUsername.getText());
         return 0;
     }
 
     public void autologinClear() {
-        AVM_Properties.setProperty(AVM_Properties.AUTO_LOGIN_PASSWORD_KEY, "");
-        AVM_Properties.setProperty(AVM_Properties.AUTO_LOGIN_DESTINATION_KEY, "");
+        AVM_Properties.setProperty(AVM_Properties.Name.auto_login_password, "");
+        AVM_Properties.setProperty(AVM_Properties.Name.auto_login_destination, "");
     }
     
 }

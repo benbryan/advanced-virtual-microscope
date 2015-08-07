@@ -76,6 +76,7 @@ public class ROI_ManagerPanelStudy extends ROI_ManagerPanel implements MouseMoti
         studySource.addStudyChangeListener(jXTreeTableROIs);
         setupPopupMenu();
         setVisible(true);
+        addMouseMotionListener(jXTreeTableROIs);
     }
 
     public final void setAllComponentsEnabled(JPanel panel, boolean state) {

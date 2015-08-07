@@ -10,8 +10,8 @@ public class KVStoreRef {
     private static KVStore kvstore = null;
     public static KVStore getRef() {
         if (kvstore == null){
-            String storeName = AVM_Properties.getProperty(AVM_Properties.DATABASE_NAME_KEY);
-            String hosts[] = AVM_Properties.getProperty(AVM_Properties.DATABASE_HOSTS_KEY).split(",");
+            String storeName = AVM_Properties.getProperty(AVM_Properties.Name.database_name);
+            String hosts[] = AVM_Properties.getProperty(AVM_Properties.Name.database_hosts).split(",");
             try {
                 KVStoreConfig kconfig = new KVStoreConfig(storeName, hosts );
                 kvstore = KVStoreFactory.getStore(kconfig);

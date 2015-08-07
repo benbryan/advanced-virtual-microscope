@@ -42,8 +42,8 @@ public class PluginSolution implements AVM_Plugin {
                 SolutionManager solutionManager = new SolutionManager(username, solutionSource);
                 solutionManager.setVisible(true);
                 solutionManager.toFront();
-                solutionManager.showModelSetupWindow();
-                solutionManager.showAddImagesPrompt();
+                solutionManager.showSetupPrompts();
+
                 AdvancedVirtualMicroscope.addWindow(solutionManager, "Solution: " + solutionSource.getName());
             }
         }));

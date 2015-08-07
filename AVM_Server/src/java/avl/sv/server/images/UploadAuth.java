@@ -14,7 +14,7 @@ public class UploadAuth{
     final ImageManager imageManager;
     public UploadAuth( AVM_Session session, ImageManager imageManager) {
         this.uploadToken = createUploadToken();
-        this.revokerAfter = new Date(new Date().getTime()+Integer.parseInt(AVM_Properties.getProperty(AVM_Properties.UPLOAD_SESSION_TIMEOUT_MINUTES))*60*1000);
+        this.revokerAfter = new Date(new Date().getTime()+Integer.parseInt(AVM_Properties.getProperty(AVM_Properties.Name.upload_session_timeout_minutes))*60*1000);
         this.session = session;
         this.imageManager = imageManager;
     }

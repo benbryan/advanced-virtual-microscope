@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -96,6 +98,7 @@ public class SolutionXML_Parser {
             classifier.setProperties(n);
             return classifier;
         } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException | InstantiationException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.WARNING, null, ex);
             System.out.println("Failed to recognize and parse a classifier");
         }
         return null;
@@ -114,7 +117,8 @@ public class SolutionXML_Parser {
             featureGenerator.setFeatureNames(featureNames.split(","));
             return featureGenerator;
         } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException | InstantiationException ex) {
-            System.out.println("Failed to recognize and parse a feature generator");
+             Logger.getLogger(getClass().getName()).log(Level.WARNING, null, ex);
+                System.out.println("Failed to recognize and parse a feature generator");
         }
         return null;
     }

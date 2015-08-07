@@ -14,8 +14,6 @@ import org.jocl.Pointer;
 import org.jocl.cl_platform_id;
 
 public final class JOCL_Configure extends JFrame {
-    private static final String PlatformIndexKey = "CL_platform_Index";
-    private static final String DeviceIndexKey = "CL_device_Index";
     boolean enableSaving = false;
         
     public JOCL_Configure() {
@@ -58,7 +56,7 @@ public final class JOCL_Configure extends JFrame {
     }
     
     public static int getSelectedPlatformIndex(){
-        String platformIdx = AVM_Properties.getProperty(PlatformIndexKey);
+        String platformIdx = AVM_Properties.getProperty(AVM_Properties.Name.CL_platform_Index);
         if (platformIdx != null) {
             return Integer.valueOf(platformIdx);
         }      
@@ -66,14 +64,14 @@ public final class JOCL_Configure extends JFrame {
     }
     
     public static int getSelectedDeviceIndex(){
-        String deviceIdx = AVM_Properties.getProperty(DeviceIndexKey);
+        String deviceIdx = AVM_Properties.getProperty(AVM_Properties.Name.CL_device_Index);
         if (deviceIdx != null) {
             return Integer.valueOf(deviceIdx);
         }
         return 0;
     }
 
-    private static ArrayList<Platform> getPlatforms() {
+    public static ArrayList<Platform> getPlatforms() {
         int num_entries = 10;
         cl_platform_id platforms_Ids[] = new cl_platform_id[num_entries];
         int num_platforms[] = new int[1];
@@ -126,24 +124,24 @@ public final class JOCL_Configure extends JFrame {
         return ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getLong();
     }
         
-//    public static void main(String args[]) {
-//        try {
-//            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-//                if ("Nimbus".equals(info.getName())) {
-//                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-//                    break;
-//                }
-//            }
-//        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
-//            java.util.logging.Logger.getLogger(JOCL_Configure.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-//        }
-//
-//        java.awt.EventQueue.invokeLater(new Runnable() {
-//            public void run() {
-//                new JOCL_Configure().setVisible(true);
-//            }
-//        });
-//    }    
+    public static void main(String args[]) {
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(JOCL_Configure.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new JOCL_Configure().setVisible(true);
+            }
+        });
+    }    
     
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -252,7 +250,7 @@ public final class JOCL_Configure extends JFrame {
         model.addRow(new Object[]{"CL_DEVICE_VENDOR", getString(device, CL.CL_DEVICE_VENDOR)});
         model.addRow(new Object[]{"CL_DEVICE_VERSION", getString(device, CL.CL_DEVICE_VERSION)});
         model.addRow(new Object[]{"CL_DRIVER_VERSION", getString(device, CL.CL_DRIVER_VERSION)});
-        model.addRow(new Object[]{"CL_DEVICE_GLOBAL_MEM_SIZE", String.valueOf(Math.round(getMemoryTotal(device)/Math.pow(10, 9)*100)/100)+" GB"});
+        model.addRow(new Object[]{"CL_DEVICE_GLOBAL_MEM_SIZE", String.valueOf(Math.round(getMemoryTotal(device)/Math.pow(2, 20)*100)/100)+" MB"});
         model.addRow(new Object[]{"CL.CL_DEVICE_LOCAL_MEM_SIZE", String.valueOf(getIntParam(device, CL.CL_DEVICE_LOCAL_MEM_SIZE)/Math.pow(10, 3)+ " KB")});
         model.addRow(new Object[]{"CL_DEVICE_MAX_CLOCK_FREQUENCY", String.valueOf(getIntParam(device, CL.CL_DEVICE_MAX_CLOCK_FREQUENCY)+ " MHz")});
         model.addRow(new Object[]{"CL_DEVICE_MAX_COMPUTE_UNITS", String.valueOf(getIntParam(device, CL.CL_DEVICE_MAX_COMPUTE_UNITS))});
@@ -269,8 +267,8 @@ public final class JOCL_Configure extends JFrame {
         if (enableSaving){
             int platformIdx = jComboBoxPlatform.getSelectedIndex();
             int deviceIdx = jComboBoxDevice.getSelectedIndex();
-            AVM_Properties.setProperty(PlatformIndexKey, String.valueOf(platformIdx));
-            AVM_Properties.setProperty(DeviceIndexKey, String.valueOf(deviceIdx));
+            AVM_Properties.setProperty(AVM_Properties.Name.CL_platform_Index, String.valueOf(platformIdx));
+            AVM_Properties.setProperty(AVM_Properties.Name.CL_device_Index, String.valueOf(deviceIdx));
         }
     }
     

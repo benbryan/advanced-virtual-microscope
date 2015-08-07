@@ -11,6 +11,8 @@ import avl.sv.shared.study.ROI;
 import avl.sv.shared.image.ImageSourceFile;
 import avl.sv.shared.solution.Solution;
 import avl.sv.shared.study.AnnotationSet;
+import avl.sv.shared.study.StudyChangeEvent;
+import avl.sv.shared.study.StudyChangeListener;
 import avl.sv.shared.study.StudySource;
 import java.awt.Color;
 import java.awt.Component;
@@ -42,6 +44,9 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -83,6 +88,8 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
         setupPopupMenu();
         studySource.addStudyChangeListener(jXTreeTableROIs);
         setVisible(true);
+        addMouseMotionListener(jXTreeTableROIs);
+        
     }
 
     public final void setAllComponentsEnabled(JPanel panel, boolean state) {
@@ -248,9 +255,33 @@ public class ROI_ManagerPanelSolution extends ROI_ManagerPanel implements MouseM
     private void populateAnnotationSet(StudySource studySource) {
         final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
         Runnable task = new Runnable() {
+            @Override
             public void run() {
                 try {
                     TreeTableModelStudy annoSetModel = studySource.getAnnotationSetModel(imageReference);
+                    annoSetModel.addTreeModelListener(new TreeModelListener() {
+                        @Override
+                        public void treeNodesChanged(TreeModelEvent e) {
+                            if ((solutionManager != null) && (imageViewer != null)){
+                                solutionManager.updateButtons(imageViewer);
+                            } 
+                        }
+                        @Override
+                        public void treeNodesInserted(TreeModelEvent e) {
+                            if ((solutionManager != null) && (imageViewer != null)){
+                                solutionManager.updateButtons(imageViewer);
+                            }
+                        }
+                        @Override
+                        public void treeNodesRemoved(TreeModelEvent e) {
+                            if ((solutionManager != null) && (imageViewer != null)){
+                                solutionManager.updateButtons(imageViewer);
+                            }
+                        }
+                        @Override
+                        public void treeStructureChanged(TreeModelEvent e) {
+                        }
+                    });
                     Solution solution = solutionManager.getSolutionSource().getSolution();
                     HashMap<Long, String> classifierClassNames = solution.getClassifierClassNames();
                     jXTreeTableROIs.setModel(annoSetModel);

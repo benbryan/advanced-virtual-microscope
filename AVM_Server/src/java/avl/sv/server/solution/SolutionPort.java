@@ -506,8 +506,14 @@ public class SolutionPort {
         if (session == null) {
             return MessageStrings.SESSION_EXPIRED;
         }
-        progressMonitors.remove(progressMonitorID).cancel();
-        return "error: failed to get progress";
+        BlindProgressMonitor pm = progressMonitors.remove(progressMonitorID);
+        if (pm != null){
+            pm.cancel();
+            return MessageStrings.SUCCESS;
+        } else{
+            return MessageStrings.NO_SUCH_PROGRESS_MONITOR;
+        }
+        
     }
 
 }

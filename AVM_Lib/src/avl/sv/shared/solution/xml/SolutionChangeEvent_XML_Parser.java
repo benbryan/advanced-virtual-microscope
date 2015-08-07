@@ -1,9 +1,6 @@
 package avl.sv.shared.solution.xml;
 
-import avl.sv.shared.solution.xml.*;
-import avl.sv.shared.image.ImageReferenceSetXML_Parser;
 import avl.sv.shared.NamedNodeMapFunc;
-import avl.sv.shared.image.ImageReference;
 import avl.sv.shared.solution.SolutionChangeEvent;
 import avl.sv.shared.solution.SolutionChangeEvent.Type;
 import java.io.ByteArrayInputStream;

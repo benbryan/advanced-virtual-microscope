@@ -59,7 +59,7 @@ public class SampleSetClass {
     }
     
     public static Instances generateInstances(ArrayList<ImageSource> imageSources, SolutionSource solutionSource, AVM_ProgressMonitor pm) throws Throwable {
-        Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+//        Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
         Solution solution = solutionSource.getSolution();
         StudySource study = solutionSource.getStudySource();       
         Collection<String> classNames = solution.getClassifierClassNames().values();
@@ -127,7 +127,7 @@ public class SampleSetClass {
                 }
             }
         }
-        Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
+//        Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
         return instances;
     }
 

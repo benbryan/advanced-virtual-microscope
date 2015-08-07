@@ -6,6 +6,7 @@ import avl.sv.shared.study.ROI;
 import avl.sv.shared.image.ImageSource;
 import avl.sv.shared.model.featureGenerator.AbstractFeatureGenerator;
 import avl.sv.shared.model.featureGenerator.jocl.JOCL_Configure;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -56,17 +57,20 @@ public class SampleSetImage {
         samples = new ArrayList<>();
         int tilesX = (int) Math.floor((double) imageSource.getImageDimX() / tileDim);
         int tilesY = (int) Math.floor((double) imageSource.getImageDimY() / tileDim);
-        if (((long)tilesX)*((long)tilesY) < 50000000){
+        long upperMemLimit = Math.min(50000000, Runtime.getRuntime().freeMemory()/2);
+        if (((long)tilesX)*((long)tilesY) < upperMemLimit){
             BufferedImage tileRep = new BufferedImage(tilesX, tilesY, BufferedImage.TYPE_BYTE_GRAY);
             Graphics2D g = (Graphics2D) tileRep.getGraphics();
             AffineTransform at = new AffineTransform();
             at.scale(1 / tileDim, 1 / tileDim);
+            at.translate(-tileDim/2, -tileDim/2);
             g.setTransform(at);
-            g.setColor(Color.white);
             for (ROI roi : rois) {
                 Shape s = roi.getShape();
-                g.setClip(s);
+                g.setColor(Color.WHITE);
                 g.fill(s);
+                g.setColor(Color.BLACK);
+                g.draw(s);
             }
 
             // First try to locate samples from a grid layout
@@ -76,12 +80,12 @@ public class SampleSetImage {
                     byte b[] = (byte[]) raster.getDataElements(x, y, null);
                     if (b[0] != 0) {
                         int offset = ((int) windowDim - (int) tileDim) / 2;
-                        Rectangle tile = new Rectangle( ((int) (x / 1 * tileDim)), 
-                                                        ((int) (y / 1 * tileDim)), 
+                        Rectangle tile = new Rectangle( ((int) (x * tileDim)), 
+                                                        ((int) (y * tileDim)), 
                                                         (int) tileDim, 
                                                         (int) tileDim);
-                        Rectangle window = new Rectangle(   ((int) (x / 1 * tileDim)) - offset, 
-                                                            ((int) (y / 1 * tileDim)) - offset, 
+                        Rectangle window = new Rectangle(   ((int) (x * tileDim)) - offset, 
+                                                            ((int) (y * tileDim)) - offset, 
                                                             (int) windowDim, 
                                                             (int) windowDim);
                         samples.add(new Sample(tile, window));
@@ -101,7 +105,7 @@ public class SampleSetImage {
     }
     
     private void removeCloseSamples(double tileDim){
-        if (samples.size() < 10) {
+        if (samples.size() > 10) {
             ArrayList<Sample> toCheck = new ArrayList<>();
             toCheck.addAll(samples);
             while (true) {
@@ -128,7 +132,7 @@ public class SampleSetImage {
     }
     
     private void sampleOffGrid(ROI roi, double tileDim, double windowDim){       
-        int upSampleFactor = 4;
+        int upSampleFactor = 16;
         Shape shape = roi.getShape();
         Rectangle bounds = shape.getBounds();
         int tilesX = (int) Math.floor((double) bounds.width  / tileDim) * upSampleFactor;
@@ -141,12 +145,13 @@ public class SampleSetImage {
         at.translate(-bounds.x, -bounds.y);
         g.setTransform(at);
         g.setColor(Color.white);
-        
-        g.setClip(shape);
         g.fill(shape);
+        g.setStroke(new BasicStroke(3));
+        g.setColor(Color.BLACK);
+        g.draw(shape);
         
-        for (int x = 0; x <= tilesX - upSampleFactor; x+=upSampleFactor) {
-            for (int y = 0; y <= tilesY - upSampleFactor; y+=upSampleFactor) {
+        for (int x = 0; x <= tilesX - upSampleFactor; x+=1) {
+            for (int y = 0; y <= tilesY - upSampleFactor; y+=1) {
                 byte b[] = (byte[]) tileRep.getRaster().getDataElements(x, y, upSampleFactor, upSampleFactor, null);
                 boolean allSet = true;
                 for (int k = 0; k < b.length; k++) {
@@ -154,12 +159,12 @@ public class SampleSetImage {
                 }
                 if (allSet) {
                     int offset = ((int) windowDim - (int) tileDim) / 2;
-                    Rectangle tile = new Rectangle( bounds.x + ((int) (x / upSampleFactor * tileDim)), 
-                                                    bounds.y + ((int) (y / upSampleFactor * tileDim)), 
+                    Rectangle tile = new Rectangle( bounds.x + ((int) ((double)x / (double)upSampleFactor * (double)tileDim)), 
+                                                    bounds.y + ((int) ((double)y / (double)upSampleFactor * (double)tileDim)), 
                                                     (int) tileDim, 
                                                     (int) tileDim);
-                    Rectangle window = new Rectangle(  bounds.x + ((int) (x / upSampleFactor * tileDim)) - offset, 
-                                                       bounds.y + ((int) (y / upSampleFactor * tileDim)) - offset, 
+                    Rectangle window = new Rectangle(  bounds.x + ((int) ((double)x / (float)upSampleFactor * (double)tileDim)) - offset, 
+                                                       bounds.y + ((int) ((double)y / (float)upSampleFactor * (double)tileDim)) - offset, 
                                                         (int) windowDim, 
                                                         (int) windowDim);
                     samples.add(new Sample(tile, window));
@@ -223,7 +228,9 @@ public class SampleSetImage {
     }
 
     public void generateSampleFeatures(AVM_ProgressMonitor pm) throws Throwable {
-                
+        if ((samples == null) || samples.isEmpty()) {
+            return;
+        }
         int tileDim = solution.getTileDim();
         int windowDim = solution.getTileWindowDim();
         if ((pm != null) && pm.isCanceled()) {
@@ -267,6 +274,7 @@ public class SampleSetImage {
                     allFeatures[idx++] = knownGeneratorsAndFeature.get(featureName);
                 }
             }
+
             for (Sample sample : samples) {
                 int x = sample.tile.x / tileDim;
                 int y = sample.tile.y / tileDim;
@@ -299,11 +307,14 @@ public class SampleSetImage {
         ArrayList<Future<List<Sample>>> chunkFetcherFuture = new ArrayList<>();
         chunkFetcherFuture.add(pool.submit(chunkFetchers.get(0)));
         for (int i = 0; i < chunkFetchers.size(); i++) {
+            if (Thread.currentThread().isInterrupted()) {
+                return;
+            }
             List<Sample> subSamples;
             try {
                 System.out.println("Working on chunk " + String.valueOf(i + 1) + " of " + chunkFetchers.size());
                 subSamples = chunkFetcherFuture.get(i).get(5, TimeUnit.MINUTES);
-                for (Sample sample:subSamples){
+                for (Sample sample : subSamples){
                     if (sample.img == null){
                         System.out.println("Null image");
                     }

@@ -30,7 +30,7 @@ public class ServletContextListenerAVM implements ServletContextListener {
             }
         }, 6, 6, TimeUnit.HOURS);
 
-        int timeout = Integer.parseInt(AVM_Properties.getProperty(AVM_Properties.UPLOAD_SESSION_TIMEOUT_MINUTES));
+        int timeout = Integer.parseInt(AVM_Properties.getProperty(AVM_Properties.Name.upload_session_timeout_minutes));
         executor.scheduleAtFixedRate(() -> {
             try {
                 UploadAuthManager.purgeExpiredAuths();

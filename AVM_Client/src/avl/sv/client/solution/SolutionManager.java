@@ -29,6 +29,7 @@ import avl.sv.shared.image.ImageSource;
 import avl.sv.shared.image.ImagesSource;
 import avl.sv.shared.model.classifier.ClassifierWeka;
 import avl.sv.shared.solution.SolutionChangeEvent;
+import avl.sv.shared.solution.SolutionChangeListener;
 import avl.sv.shared.solution.SolutionSource;
 import avl.sv.shared.solution.xml.SolutionXML_Parser;
 import avl.sv.shared.study.StudySource;
@@ -53,6 +54,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,8 +64,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
@@ -116,6 +121,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
     private boolean canModify;
     JSpinner jSpinnerTileDim, jSpinnerWindowDim;
     private ExecutorService executorGenerateModel;
+    private ExecutorService executorSolutionChange;
 
     private void errorOut(String msg) {
         String str = "Failed to load solution " + solutionSource.getName() + " because of: " + msg;
@@ -128,9 +134,34 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         this.studySource = solutionSource.getStudySource();
         this.imagesSource = studySource.getImagesSource();
         this.username = username;
-
-        EventQueue.invokeLater(new Runnable() {
-
+        setupLookAndFeel();
+        initComponents();
+        executorGenerateModel = Executors.newSingleThreadExecutor();
+        executorSolutionChange = Executors.newSingleThreadExecutor();
+        
+        solutionSource.addSolutionChangeListener(new SolutionChangeListener() {
+            @Override
+            public void solutionChanged(SolutionChangeEvent event) {
+                AccessController.doPrivileged(new PrivilegedAction<Integer>() {
+                    @Override
+                    public Integer run() {
+                        switch (event.type) {
+                            case Full:
+                                try {
+                                    solution = new SolutionXML_Parser().parse(event.eventData);
+                                    AdvancedVirtualMicroscope.setStatusText("Solution " + solution.toString() + " updated from server", 5000);
+                                } catch (ParserConfigurationException | SAXException | IOException ex) {
+                                    Logger.getLogger(SolutionManager.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                                break;
+                        }
+                        return 0;
+                    }
+                });
+            }
+        });
+                
+        executorGenerateModel.submit(new Runnable() {
             @Override
             public void run() {
                 if (solutionSource == null) {
@@ -147,8 +178,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                     return;
                 }
 
-                setupLookAndFeel();
-                initComponents();
+
                 jTreeStudy.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
                 canModify = solutionSource.getPermissions().canModify();
@@ -188,18 +218,6 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                 });
 
                 jCheckBoxMenuItemRunOnServer.setVisible(solutionSource instanceof SolutionSourcePort);
-                solutionSource.addSolutionChangeListener((SolutionChangeEvent event) -> {
-                    switch (event.type) {
-                        case Full:
-                            try {
-                                solution = new SolutionXML_Parser().parse(event.eventData);
-                                AdvancedVirtualMicroscope.setStatusText("Solution " + solution.toString() + " updated from server", 5000);
-                            } catch (ParserConfigurationException | SAXException | IOException ex) {
-                                Logger.getLogger(SolutionManager.class.getName()).log(Level.SEVERE, null, ex);
-                            }
-                            break;
-                    }
-                });
 
                 jFileChooserImportExportClassifier = new JFileChooser();
                 jFileChooserImportExportClassifier.setMultiSelectionEnabled(false);
@@ -210,6 +228,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                 jFileChooserWekaExportTrainingData.setFileFilter(new ARFF_Filter());
                 jFileChooserWekaExportTrainingData.setFileSelectionMode(JFileChooser.FILES_ONLY);
                 jFileChooserWekaExportTrainingData.setMultiSelectionEnabled(false);
+                countDownLatchSolution.countDown();
                 pack();
             }
         });
@@ -253,6 +272,9 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
     }
 
     public void updateButtons(final ImageViewer imageViewer) {
+        if (imageViewerLastSelected != imageViewer){
+            return;
+        }
         final Solution s = solution;
         EventQueue.invokeLater(() -> {
             try {
@@ -353,8 +375,8 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         Rectangle bounds = g.getClipBounds();
         bounds.x = (int) Math.max(0, Math.floor((double) bounds.x / tileDim) * tileDim);
         bounds.y = (int) Math.max(0, Math.floor((double) bounds.y / tileDim) * tileDim);
-        bounds.width = Math.min(bounds.width, imageSource.getImageDimX());
-        bounds.height = Math.min(bounds.height, imageSource.getImageDimY());
+        bounds.width = Math.min(bounds.width, imageSource.getImageDimX())+tileDim;
+        bounds.height = Math.min(bounds.height, imageSource.getImageDimY())+tileDim;
 
         for (int x = 0; x < imageSource.getImageDimX(); x += tileDim) {
             g.drawLine(x, bounds.y, x, bounds.y + bounds.height);
@@ -363,12 +385,15 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             g.drawLine(bounds.x, y, bounds.x + bounds.width, y);
         }
         if (tileDim != tileWindowDim) {
-            g.setStroke(new BasicStroke(1, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10, new float[]{10.0f}, 0));
+            g.setStroke(new BasicStroke(5, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10, new float[]{10.0f}, 0));
             g.setColor(Color.red);
             int skip = (int) Math.ceil((float) tileWindowDim / tileDim) + 2;
             for (int x = bounds.x; x < bounds.x + bounds.width; x += tileDim * skip) {
                 for (int y = bounds.y; y < bounds.y + bounds.height; y += tileDim * skip) {
-                    g.drawRect(x - tileWindowDim / 2, y - tileWindowDim / 2, tileWindowDim, tileWindowDim);
+                    g.drawRect( x - tileWindowDim / 2+tileDim/2, 
+                                y - tileWindowDim / 2+tileDim/2, 
+                                tileWindowDim, 
+                                tileWindowDim);
                 }
             }
         }
@@ -822,7 +847,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                         pm.close();
                         return;
                     }
-                    FeatureDisplay fd = new FeatureDisplay(imageViewer, sampleSetImage.samples, featureNames.toArray(new String[featureNames.size()]), "Overlay #" + String.valueOf(overlayIdx++));
+                    FeatureOverlay fd = new FeatureOverlay(imageViewer, sampleSetImage.samples, featureNames.toArray(new String[featureNames.size()]), "Overlay #" + String.valueOf(overlayIdx++));
                     imageViewer.addPlugin(fd);
                 }
                 jButtonViewFeatures.setEnabled(true);
@@ -881,8 +906,20 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
             }
         });
     }
-
-    public void showModelSetupWindow() {
+    private final CountDownLatch countDownLatchSolution = new CountDownLatch(1);
+    
+    public void showSetupPrompts(){
+        try {
+            countDownLatchSolution.await(30, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(SolutionManager.class.getName()).log(Level.SEVERE, null, ex);
+            return;
+        }
+        showModelSetupWindow();
+        showAddImagesPrompt();
+    }
+    
+    private void showModelSetupWindow() {
         ModelSetup ms = new ModelSetup(this, true, solution);
         ms.setVisible(true);
         if (ms.iscanceled()) {
@@ -921,17 +958,20 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                         @Override
                         public void actionPerformed(ActionEvent e) {
                             try {
-                                if (pm.isCanceled()) {
-                                    ssp.cancelMonitor(progressMonitorID);
-                                    for (ClassifierWeka classifier : solution.getClassifiers()) {
-                                        if (classifier.isActive()) {
-                                            JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(null), classifier.getMessage(), "Classifier Results", JOptionPane.INFORMATION_MESSAGE);
-                                        }
-                                    }
+                                if (pm.isCanceled() || Thread.currentThread().isInterrupted()) {
                                     t.stop();
+                                    ssp.cancelMonitor(progressMonitorID);
+//                                    for (ClassifierWeka classifier : solution.getClassifiers()) {
+//                                        if (classifier.isActive()) {
+//                                            JOptionPane.showMessageDialog((Frame) SwingUtilities.getWindowAncestor(null), classifier.getMessage(), "Classifier Results", JOptionPane.INFORMATION_MESSAGE);
+//                                        }
+//                                    }
                                     return;
                                 }
                                 Properties p = ssp.getProgress(progressMonitorID);
+                                if (p==null){
+                                    return;
+                                }
                                 pm.setMinimum(Integer.valueOf(p.getProperty("min")));
                                 pm.setMaximum(Integer.valueOf(p.getProperty("max")));
                                 pm.setProgress(Integer.valueOf(p.getProperty("progress")));
@@ -943,6 +983,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                                     t.stop();
                                 }
                             } catch (Exception ex) {
+                                Logger.getLogger(getClass().getName()).log(Level.WARNING, null, ex);
                             }
                         }
                     });
@@ -1096,6 +1137,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         final ImageViewer imageViewer = new ImageViewer(imageSource);
         imageViewer.readOnly = !studySource.getPermissions().canModify();
         final ROI_ManagerPanelSolution roiManager = new ROI_ManagerPanelSolution(imageViewer, studySource, this, canModify);
+        
         imageViewer.setROI_ManagerPanel(roiManager);
         Executors.newSingleThreadExecutor().submit(() -> {
             imageViewer.addMouseListener(this);
@@ -1508,7 +1550,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
                         if (classifier.isActive() && classifier.isValid()) {
                             classifier.distribution(samples, solution.getClassifierClassNames().size());
                             Collection<String> classNames = solution.getClassifierClassNames().values();
-                            ClassifierDistribution cr = new ClassifierDistribution(classifier.getName(), imageViewer, samples, classNames.toArray(new String[classNames.size()]), "Overlay #" + String.valueOf(overlayIdx++));
+                            ClassifierResultsDistribution cr = new ClassifierResultsDistribution(classifier.getName(), imageViewer, samples, classNames.toArray(new String[classNames.size()]), "Overlay #" + String.valueOf(overlayIdx++));
                             imageViewer.addPlugin(cr);
                         }
                     }
@@ -1691,7 +1733,7 @@ public class SolutionManager extends JFrame implements MouseMotionListener, Mous
         }
     }
 
-    public void showAddImagesPrompt() {
+    private void showAddImagesPrompt() {
         final SearchableSelector imageSelector = new SearchableSelector("Select Image", "Add") {
             @Override
             public void doubleClicked(ArrayList<AVM_Source> selected) {

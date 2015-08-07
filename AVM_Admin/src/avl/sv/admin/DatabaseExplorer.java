@@ -111,6 +111,7 @@ public class DatabaseExplorer extends javax.swing.JPanel {
                     root.add(new DefaultMutableTreeNode("study"));
                     root.add(new DefaultMutableTreeNode("image"));
                     root.add(new DefaultMutableTreeNode("solution"));
+                    root.add(new DefaultMutableTreeNode("FeatureGeneratorTasks"));
 
                     jTreeMajorKeys.setModel(new DefaultTreeModel(root));
                     jTreeMinorKeys.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("")));

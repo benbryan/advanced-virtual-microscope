@@ -3,6 +3,7 @@ package avl.sv.client.solution;
 import avl.sv.client.image.ImagesSourcePort;
 import avl.sv.server.solution.SolutionPort;
 import avl.sv.shared.AVM_Session;
+import avl.sv.shared.MessageStrings;
 import avl.sv.shared.PermissionDenied;
 import avl.sv.shared.Permissions;
 import avl.sv.shared.image.ImageReference;
@@ -14,6 +15,7 @@ import avl.sv.shared.solution.SolutionChangeListener;
 import avl.sv.shared.study.StudySource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -21,6 +23,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -56,6 +64,7 @@ public class SolutionSourcePort extends SolutionSource {
     private final ImagesSourcePort imagesSource;
     Session solutionPortChangeLoggerSession = null;
     private final AVM_Session avmSession;
+    private ExecutorService studyPortChangeLoggerSessionExecutor;
    
     private SolutionSourcePort(ImagesSourcePort imagesSource, SolutionPort port, StudySource studySource, int id, AVM_Session avmSession) {
         super(id);
@@ -67,7 +76,30 @@ public class SolutionSourcePort extends SolutionSource {
     
     @Override
     public String setSolution(String xml) {
-        return solutionPort.set(solutionId, xml);
+//        return solutionPort.set(solutionId, xml);
+        
+        if (solutionPortChangeLoggerSession == null){
+            initSolutionPortChangeLoggerSession();
+            if (solutionPortChangeLoggerSession == null){
+                return MessageStrings.ERROR;
+            }
+        }    
+        SolutionChangeEvent event = new SolutionChangeEvent(solutionId, SolutionChangeEvent.Type.Full, avmSession.username, xml);
+        try {
+            byte b[] = event.toXML().getBytes();
+            OutputStream os = solutionPortChangeLoggerSession.getBasicRemote().getSendStream();
+            int idx = 0;
+            final int s = 1024;
+            while(idx<b.length){
+               os.write(b, idx, Math.min(s, b.length-idx)); 
+               idx+=s;
+            }
+            os.close();
+            return MessageStrings.SUCCESS;
+        } catch (IOException ex) {
+            Logger.getLogger(SolutionSourcePort.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return MessageStrings.ERROR;
     }
 
     @Override
@@ -186,9 +218,17 @@ public class SolutionSourcePort extends SolutionSource {
         }
     }
     
+    private boolean initSolutionPortChangeLoggerSession() {
+        if ((solutionPortChangeLoggerSession != null) && solutionPortChangeLoggerSession.isOpen()) {
+            return true;
+        }
+        if (studyPortChangeLoggerSessionExecutor != null) {
+            studyPortChangeLoggerSessionExecutor.shutdown();
+        }
+        studyPortChangeLoggerSessionExecutor = Executors.newSingleThreadExecutor();
 
-    private void initSolutionPortChangeLoggerSession() {
-        try {
+        Future<Exception> result = studyPortChangeLoggerSessionExecutor.submit(() -> {
+            try {
             BindingProvider bp = (BindingProvider) solutionPort;
             Map<String, Object> req_ctx = bp.getRequestContext();
             String changeMonitorURL = (String) req_ctx.get(BindingProvider.ENDPOINT_ADDRESS_PROPERTY);
@@ -208,11 +248,24 @@ public class SolutionSourcePort extends SolutionSource {
                 }
             });
             solutionPortChangeLoggerSession = container.connectToServer(changeMonitor, new URI(changeMonitorURL));
-        } catch (DeploymentException | IOException | URISyntaxException ex) {
-            Logger.getLogger(SolutionSourcePort.class.getName()).log(Level.SEVERE, null, ex);
+                return null;
+            } catch (Exception ex) {
+                return ex;
+            }
+        });
+        try {
+            Exception ex = result.get(3, TimeUnit.SECONDS);
+            if (ex != null){
+                Logger.getLogger(SolutionSourcePort.class.getName()).log(Level.SEVERE, null, ex);
+                return false;
+            }
+            return solutionPortChangeLoggerSession != null && solutionPortChangeLoggerSession.isOpen();
+            } catch (InterruptedException | ExecutionException | TimeoutException ex1) {
+            Logger.getLogger(SolutionSourcePort.class.getName()).log(Level.SEVERE, null, ex1);
         }
+        return false;
     }
-    
+        
     @Override
     public void addSolutionChangeListener(SolutionChangeListener listener) {
         if (solutionPortChangeLoggerSession == null){

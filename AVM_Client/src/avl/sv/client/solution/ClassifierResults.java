@@ -29,12 +29,15 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 
 public class ClassifierResults extends javax.swing.JFrame implements ImageViewerPlugin {
+
     final ArrayList<Sample> samples;
     final String names[];
     final ImageViewer imageViewer;
     private final DefaultTableModel model;
     BufferedImage overlayImage = null;
-    int lowerX, lowerY, upperX, upperY;;
+    int lowerX, lowerY, upperX, upperY;
+    private float alpha;
+
     
     public ClassifierResults(String classifierName, ImageViewer imageViewer, ArrayList<Sample> samples, String names[], String title) {
         initComponents();
@@ -42,10 +45,11 @@ public class ClassifierResults extends javax.swing.JFrame implements ImageViewer
         this.names = names;
         this.imageViewer = imageViewer;
         setTitle(title + ", " + classifierName + " Results");
-        
-        model = (DefaultTableModel) new DefaultTableModel(){
+
+        model = (DefaultTableModel) new DefaultTableModel() {
             Class columnClasses[] = new Class[]{String.class, ImageIcon.class, Boolean.class};
             String columnNames[] = new String[]{"Name", "Color", "Visible"};
+
             @Override
             public Class<?> getColumnClass(int columnIndex) {
                 return columnClasses[columnIndex]; //To change body of generated methods, choose Tools | Templates.
@@ -60,10 +64,10 @@ public class ClassifierResults extends javax.swing.JFrame implements ImageViewer
             public String getColumnName(int column) {
                 return columnNames[column]; //To change body of generated methods, choose Tools | Templates.
             }
-             
+
         };
 
-        for (int i = 0; i < names.length; i++){
+        for (int i = 0; i < names.length; i++) {
             BufferedImage img = new BufferedImage(10, 10, BufferedImage.TYPE_3BYTE_BGR);
             Graphics g = img.getGraphics();
             g.setColor(ColormapJet.getColor(i, names.length));
@@ -71,7 +75,7 @@ public class ClassifierResults extends javax.swing.JFrame implements ImageViewer
             model.addRow(new Object[]{names[i], new ImageIcon(img), true});
         }
         jTableClassifierResults.setModel(model);
-        
+
         model.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
@@ -83,77 +87,46 @@ public class ClassifierResults extends javax.swing.JFrame implements ImageViewer
             @Override
             public void stateChanged(ChangeEvent e) {
                 try {
-                    if (overlayImage != null){
+                    updateAlpha();
+                    if (overlayImage != null) {
                         int alpha = jSliderOccupacity.getValue();
                         DataBuffer buff = overlayImage.getRaster().getDataBuffer();
-                        for (int i = 0; i < buff.getSize(); i+=4){
-                            if (buff.getElem(i)>0){
+                        for (int i = 0; i < buff.getSize(); i += 4) {
+                            if (buff.getElem(i) > 0) {
                                 buff.setElem(i, alpha);
                             }
                         }
                     }
                     imageViewer.repaint();
-                } catch (Exception ex) { }
+                } catch (Exception ex) {
+                }
             }
         });
         setVisible(true);
+        updateAlpha();
     }
-    
+
+    private void updateAlpha() {
+        alpha = (float) jSliderOccupacity.getValue() / (float) jSliderOccupacity.getMaximum();
+    }
+
     @Override
-    public void paintPlugin( ImageViewer imageViewer, Graphics gOrig) {
+    public void paintPlugin(ImageViewer imageViewer, Graphics gOrig) {
         if ((samples == null)) {
             return;
         }
         Graphics2D g = (Graphics2D) gOrig.create();
-        imageViewer.concatenateImageToDisplayTransform(g);        
-        
-        if (overlayImage == null){
-            upperX = 0;
-            upperY = 0;
-            lowerX = Integer.MAX_VALUE;
-            lowerY = Integer.MAX_VALUE;
-            for (Sample sample : samples) {
-                for (int i = 0; i < names.length; i++) {
-                    if (sample.classifierLabel == i) {
-                        if (((boolean) model.getValueAt(i, 2))) {
-                            Rectangle r = sample.tile;
-                            if ((r.x+r.width) > upperX){
-                                upperX = r.x+r.width;
-                            }
-                            if ((r.y+r.height) > upperY){
-                                upperY = r.y+r.height;
-                            }
-                            if (r.x < lowerX){
-                                lowerX = r.x;
-                            }
-                            if (r.y < lowerY){
-                                lowerY = r.y;
-                            }
-                        }
-                        break;
-                    }
-                }
+        imageViewer.concatenateImageToDisplayTransform(g);
+
+        if (samples.size() > 1000) {
+            if (overlayImage == null) {
+                createImageOverlay();
             }
-            int tileDim = samples.get(0).tile.width;
-            overlayImage = new BufferedImage((upperX-lowerX)/tileDim, (upperY-lowerY)/tileDim, BufferedImage.TYPE_4BYTE_ABGR);
-            Graphics2D gOverlayImg = (Graphics2D) overlayImage.getGraphics();
-            for (Sample sample : samples) {
-                for (int i = 0; i < names.length; i++) {
-                    if (sample.classifierLabel == i) {
-                        if (((boolean) model.getValueAt(i, 2))) {
-                            gOverlayImg.setColor(ColormapJet.getColor(i, names.length));
-                            Rectangle r = sample.tile;
-                            Rectangle rPaint = new Rectangle((r.x-lowerX)/tileDim, (r.y-lowerY)/tileDim, 1, 1);
-                            gOverlayImg.fill(rPaint);
-                        }
-                        break;
-                    }
-                }
-            }
+            g.drawImage(overlayImage, lowerX, lowerY, upperX - lowerX, upperY - lowerY, null);
+        } else {
+            drawSamplesDirect(g);
         }
 
-        g.drawImage(overlayImage, lowerX, lowerY, upperX-lowerX, upperY-lowerY, null);
-        
         g.setColor(Color.black);
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1));
 
@@ -162,7 +135,7 @@ public class ClassifierResults extends javax.swing.JFrame implements ImageViewer
         gOrig.drawString(getTitle(), labelPoint.x, labelPoint.y);
 
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -253,6 +226,76 @@ public class ClassifierResults extends javax.swing.JFrame implements ImageViewer
     @Override
     public void close() {
         dispose();
+    }
+
+    private void createImageOverlay() {
+        upperX = 0;
+        upperY = 0;
+        lowerX = Integer.MAX_VALUE;
+        lowerY = Integer.MAX_VALUE;
+        for (Sample sample : samples) {
+            for (int i = 0; i < names.length; i++) {
+                if (sample.classifierLabel == i) {
+                    if (((boolean) model.getValueAt(i, 2))) {
+                        Rectangle r = sample.tile;
+                        if ((r.x + r.width) > upperX) {
+                            upperX = r.x + r.width;
+                        }
+                        if ((r.y + r.height) > upperY) {
+                            upperY = r.y + r.height;
+                        }
+                        if (r.x < lowerX) {
+                            lowerX = r.x;
+                        }
+                        if (r.y < lowerY) {
+                            lowerY = r.y;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        int tileDim = samples.get(0).tile.width;
+        overlayImage = new BufferedImage((upperX - lowerX) / tileDim, (upperY - lowerY) / tileDim, BufferedImage.TYPE_4BYTE_ABGR);
+        Graphics2D gOverlayImg = (Graphics2D) overlayImage.getGraphics();
+        for (Sample sample : samples) {
+            for (int i = 0; i < names.length; i++) {
+                if (sample.classifierLabel == i) {
+                    if (((boolean) model.getValueAt(i, 2))) {
+                        gOverlayImg.setColor(ColormapJet.getColor(i, names.length));
+                        Rectangle r = sample.tile;
+                        Rectangle rPaint = new Rectangle((r.x - lowerX) / tileDim, (r.y - lowerY) / tileDim, 1, 1);
+                        gOverlayImg.fill(rPaint);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    private void drawSamplesDirect(Graphics2D g) {
+        upperX = 0;
+        upperY = 0;
+        int tileDim = samples.get(0).tile.width;
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        for (Sample sample : samples) {
+            for (int i = 0; i < names.length; i++) {
+                if (sample.classifierLabel == i) {
+                    if (((boolean) model.getValueAt(i, 2))) {
+                        g.setColor(ColormapJet.getColor(i, names.length));
+                        Rectangle r = sample.tile;
+                        if ((r.x + r.width) > upperX) {
+                            upperX = r.x + r.width;
+                        }
+                        if ((r.y + r.height) > upperY) {
+                            upperY = r.y + r.height;
+                        }
+                        g.fill(r);
+                    }
+                    break;
+                }
+            }
+        }
     }
 
 }

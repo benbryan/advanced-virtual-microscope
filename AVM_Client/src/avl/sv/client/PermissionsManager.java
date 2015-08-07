@@ -1,6 +1,5 @@
 package avl.sv.client;
 
-import avl.sv.client.study.*;
 import avl.sv.shared.MessageStrings;
 import avl.sv.shared.Permissions;
 import java.awt.event.ActionEvent;
@@ -100,9 +99,9 @@ abstract public class PermissionsManager extends javax.swing.JDialog {
 
         jLabel3.setText("Current users");
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Add user"));
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Add existing user"));
 
-        jButtonAddUser.setText("Add User");
+        jButtonAddUser.setText("Add");
         jButtonAddUser.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonAddUserActionPerformed(evt);
@@ -187,6 +186,8 @@ abstract public class PermissionsManager extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jTextFieldNotification, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
+
+        jPanel1.getAccessibleContext().setAccessibleName("");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents

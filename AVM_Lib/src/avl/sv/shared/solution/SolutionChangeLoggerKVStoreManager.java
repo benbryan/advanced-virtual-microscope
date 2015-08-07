@@ -94,7 +94,11 @@ public class SolutionChangeLoggerKVStoreManager {
                 @Override
                 public void run() {
                     for (SolutionChangeEvent event:getAndClearEvents(loggerID, session.username)){
-                        listener.solutionChanged(event);
+                        try {
+                            listener.solutionChanged(event);
+                        }catch (Exception ex){
+                            Logger.getLogger(SolutionChangeLoggerKVStoreManager.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     }
                 }
             }, STUDY_CHANGE_LISTENER_POLL_PEROID_MS, STUDY_CHANGE_LISTENER_POLL_PEROID_MS);

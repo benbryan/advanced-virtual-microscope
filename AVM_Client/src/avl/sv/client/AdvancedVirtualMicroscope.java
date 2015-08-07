@@ -2,6 +2,7 @@ package avl.sv.client;
 
 import avl.sv.client.image.ImageViewerJFrame;
 import avl.sv.client.image.ImageViewer;
+import avl.sv.shared.AVM_Properties;
 import avl.sv.shared.image.ImageReference;
 import avl.sv.shared.image.ImageSource;
 import avl.sv.shared.model.featureGenerator.jocl.JOCL_Configure;
@@ -32,6 +33,7 @@ public class AdvancedVirtualMicroscope extends javax.swing.JFrame {
 
     private static Log logFrame;
     private static ArrayList<Window> windows = new ArrayList<>();
+    private static AVM_Properties aVM_Properties = AVM_Properties.getInstance();
 
     private static JMenuItem jMenuItemLogin = new JMenuItem(new AbstractAction("Login") {
         @Override
@@ -188,7 +190,17 @@ public class AdvancedVirtualMicroscope extends javax.swing.JFrame {
             }
         }
     }
-
+    public static void closeImageViewers(ImageReference imageReference) {
+        for (Window window : windows) {
+            if (window instanceof ImageViewerJFrame) {
+                ImageViewerJFrame imageViewerJFrame = (ImageViewerJFrame) window;
+                if (imageViewerJFrame.getImageViewer().getImageSource().imageReference.equals(imageReference)){
+                    imageViewerJFrame.getImageViewer().close();
+                    imageViewerJFrame.dispose();
+                }
+            }
+        }
+    }
     public static void addPlugins(AVM_Plugin[] plugins) {
         if (plugins == null){
             return;

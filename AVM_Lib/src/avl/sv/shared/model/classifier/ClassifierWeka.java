@@ -78,6 +78,7 @@ public class ClassifierWeka {
             Evaluation eval = new Evaluation(instances);
             Random rand = new Random(1);  // using seed = 1
             int folds = 10;
+//            eval.kappa();
             eval.crossValidateModel(classifier, instances, folds, rand);
             message = "Resulting classifier's 10 fold evaluation\n" + eval.toSummaryString();
 

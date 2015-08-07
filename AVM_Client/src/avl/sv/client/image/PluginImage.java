@@ -116,8 +116,9 @@ abstract public class PluginImage implements AVM_Plugin{
         jMenuImage.add(new JMenuItem(new AbstractAction("Delete") {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                final SearchableSelector imageSelector = new SearchableSelector("Select Image", "Delete") {
+                final SearchableSelector imageSelector = new SearchableSelector("Delete Image(s)", "Delete") {
                     public void deleteImage(ImageManager imageManager) {
+                        AdvancedVirtualMicroscope.closeImageViewers(imageManager.imageReference);
                         String result = imageManager.delete();
                         if (result.startsWith("error:")) {
                             AdvancedVirtualMicroscope.setStatusText("Failed to delete " + imageManager.imageReference.imageName + " from image set " + imageManager.imageReference.imageSetName + " with " + result, 3000);
@@ -146,8 +147,25 @@ abstract public class PluginImage implements AVM_Plugin{
 
                     @Override
                     public void doubleClicked(ArrayList<AVM_Source> selected) {
+                        openImages(selected);
                     }
-
+                    private void openImages(ArrayList<AVM_Source> selected) {
+                        ArrayList<ImageManager> imageManagers = new ArrayList<>();
+                        selected.stream().filter((node) -> (node instanceof ImageManager)).forEach((node) -> {
+                            imageManagers.add((ImageManager) node);
+                        });
+                        if (imageManagers.size() > 5) {
+                            String options[] = new String[]{"Open", "Cancel"};
+                            Object result = JOptionPane.showInputDialog(this, "Really open " + String.valueOf(imageManagers.size()) + " images", "Warning", JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+                            if (result.equals(options[1])) {
+                                return;
+                            }
+                        }
+                        imageManagers.stream().map((imageReference) -> imagesSource.createImageSource(imageReference)).forEach((imageSource) -> {
+                            AdvancedVirtualMicroscope.addImageViewer((ImageSource) imageSource);
+                        });
+                    }
+                    
                     @Override
                     public ArrayList<AVM_Source> getSelectables() {
                         ArrayList<AVM_Source> selectables = new ArrayList<>();

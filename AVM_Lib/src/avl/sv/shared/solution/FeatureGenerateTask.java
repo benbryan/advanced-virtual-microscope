@@ -92,7 +92,7 @@ public class FeatureGenerateTask implements Runnable, Serializable {
             solution.setFeatureGenerator(featureGenerator);
 
             // Define samples across the entire image
-            ArrayList<ROI> samplesFullImage = new ArrayList<>();
+            ArrayList<Sample> samplesFullImage = new ArrayList<>();
             int samplesDimX = (int) Math.ceil((double) imageSource.getImageDimX() / (double) tileDim);
             int samplesDimY = (int) Math.ceil((double) imageSource.getImageDimY() / (double) tileDim);
             for (int x = 0; x < samplesDimX; x++) {
@@ -100,11 +100,26 @@ public class FeatureGenerateTask implements Runnable, Serializable {
                     ROIRectangle rect = ROIRectangle.getDefault();
                     int offset = (tileWindowDim-tileDim)/2;
                     rect.setRectangle(new Rectangle((x*tileDim)-offset, (y*tileDim)-offset, tileWindowDim, tileWindowDim));
-                    samplesFullImage.add(rect);
+                    Rectangle tile = new Rectangle( ((int) (x * tileDim)), 
+                                                    ((int) (y * tileDim)), 
+                                                    (int) tileDim, 
+                                                    (int) tileDim);
+                    Rectangle window = new Rectangle(   ((int) (x * tileDim)) - offset, 
+                                                        ((int) (y * tileDim)) - offset, 
+                                                        (int) tileWindowDim, 
+                                                        (int) tileWindowDim);
+                    samplesFullImage.add(new Sample(tile, window));
+                    
+                    if (Thread.currentThread().isInterrupted()){
+                        imageSource.close();
+                        return;
+                    }
+                    
                 }
             }
 
-            SampleSetImage sampleSetImage = new SampleSetImage(imageSource, samplesFullImage, solution, null);
+            SampleSetImage sampleSetImage = new SampleSetImage(imageSource, new ArrayList<ROI>(), solution, null);
+            sampleSetImage.samples = samplesFullImage;
             sampleSetImage.generateSampleFeatures(null);
             ArrayList<Sample> samples = sampleSetImage.samples;
             int numelFeatures = samples.get(0).featureVector.length;
